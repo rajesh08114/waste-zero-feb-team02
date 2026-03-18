@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AppLoader from "./components/common/AppLoader";
+import RealtimeBridge from "./components/common/RealtimeBridge";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
@@ -14,6 +15,10 @@ import CreateOpportunity from "./pages/CreateOpportunity";
 import EditOpportunity from "./pages/EditOpportunity";
 import NGOOpportunities from "./pages/NGOOpportunities";
 import OpportunitiesPage from "./pages/OpportunitiesPage";
+import OpportunityDetailsPage from "./pages/OpportunityDetailsPage";
+import MatchesPage from "./pages/MatchesPage";
+import MessagesPage from "./pages/MessagesPage";
+import ChatPage from "./pages/ChatPage";
 import { useAppStore } from "./store/useAppStore";
 
 const getDashboardRoute = (user) =>
@@ -51,6 +56,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <RealtimeBridge />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
@@ -90,6 +96,50 @@ function App() {
             <ProtectedRoute allowedRoles={["volunteer", "NGO"]}>
               <DashboardLayout>
                 <OpportunitiesPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/opportunities/:id"
+          element={
+            <ProtectedRoute allowedRoles={["volunteer", "NGO"]}>
+              <DashboardLayout>
+                <OpportunityDetailsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/matches"
+          element={
+            <ProtectedRoute allowedRoles={["volunteer", "NGO"]}>
+              <DashboardLayout>
+                <MatchesPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute allowedRoles={["volunteer", "NGO"]}>
+              <DashboardLayout>
+                <MessagesPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/chat/:userId"
+          element={
+            <ProtectedRoute allowedRoles={["volunteer", "NGO"]}>
+              <DashboardLayout>
+                <ChatPage />
               </DashboardLayout>
             </ProtectedRoute>
           }

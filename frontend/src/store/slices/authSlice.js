@@ -125,6 +125,7 @@ export const createAuthSlice = (set, get) => ({
   logout: () => {
     clearStoredAuth();
     get().clearCurrentUser();
+    get().clearNotifications?.();
     get().clearAuthSession();
   },
 });

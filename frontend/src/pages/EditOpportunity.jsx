@@ -202,7 +202,7 @@ const EditOpportunity = () => {
   }
 
   return (
-    <div className="flex min-h-screen justify-center bg-gradient-to-br from-emerald-50 via-white to-emerald-100 px-4 py-12 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900">
+    <div className="flex min-h-screen justify-center bg-linear-to-br from-emerald-50 via-white to-emerald-100 px-4 py-12 dark:from-emerald-950 dark:via-slate-950 dark:to-emerald-900">
       <div className="w-full max-w-3xl rounded-3xl border border-emerald-200/60 bg-white p-10 shadow-2xl backdrop-blur-md dark:border-emerald-900/60 dark:bg-emerald-950/70">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-emerald-100">
@@ -339,7 +339,7 @@ const EditOpportunity = () => {
               <button
                 type="submit"
                 disabled={updating}
-                className="rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:shadow-emerald-500/30 disabled:opacity-60"
+                className="rounded-xl bg-linear-to-r from-emerald-600 to-green-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:shadow-emerald-500/30 disabled:opacity-60"
               >
                 {updating ? "Updating..." : "Update"}
               </button>

@@ -6,6 +6,17 @@ import { useAppStore } from "../../store/useAppStore";
 import { getApiErrorMessage } from "../../utils/apiError";
 import DashboardSidebar from "./DashboardSidebar";
 
+const formatNotificationTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  return date.toLocaleString([], {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const user = useAppStore((state) => state.currentUser);
@@ -13,9 +24,18 @@ const DashboardLayout = ({ children }) => {
   const loadCurrentUser = useAppStore((state) => state.loadCurrentUser);
   const globalSearch = useAppStore((state) => state.globalSearch);
   const setGlobalSearch = useAppStore((state) => state.setGlobalSearch);
+  const notifications = useAppStore((state) => state.notifications);
+  const unreadNotifications = useAppStore((state) => state.unreadNotifications);
+  const fetchNotifications = useAppStore((state) => state.fetchNotifications);
+  const markNotificationRead = useAppStore((state) => state.markNotificationRead);
+  const markAllNotificationsRead = useAppStore(
+    (state) => state.markAllNotificationsRead,
+  );
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState(false);
   const [verificationNotice, setVerificationNotice] = useState("");
+  const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
 
   const dashboardPath =
     user?.role === "NGO" ? "/dashboard/ngo" : "/dashboard/volunteer";
@@ -70,6 +90,20 @@ const DashboardLayout = ({ children }) => {
   const handleRefreshVerificationStatus = async () => {
     setVerificationNotice("");
     await loadCurrentUser();
+  };
+
+  const handleToggleNotifications = async () => {
+    const nextOpen = !notificationPanelOpen;
+    setNotificationPanelOpen(nextOpen);
+    if (nextOpen) {
+      await fetchNotifications({ limit: 20 });
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    setMarkingAllRead(true);
+    await markAllNotificationsRead();
+    setMarkingAllRead(false);
   };
 
   return (
@@ -143,11 +177,70 @@ const DashboardLayout = ({ children }) => {
               <button
                 type="button"
                 aria-label="Notifications"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-200 bg-white/80 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200"
+                onClick={handleToggleNotifications}
+                className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-200 bg-white/80 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200"
               >
                 <Bell size={18} />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                  </span>
+                )}
               </button>
             </div>
+
+            {notificationPanelOpen && (
+              <div className="border-t border-emerald-200/70 bg-white/95 px-4 py-3 sm:px-6 lg:px-8 dark:border-emerald-900/45 dark:bg-emerald-950/75">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+                    Notifications
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={handleMarkAllRead}
+                    disabled={markingAllRead || unreadNotifications === 0}
+                    className="text-xs font-semibold text-emerald-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-300"
+                  >
+                    {markingAllRead ? "Updating..." : "Mark all read"}
+                  </button>
+                </div>
+
+                {notifications.length === 0 ? (
+                  <p className="text-xs text-emerald-700/75 dark:text-emerald-300/75">
+                    No notifications yet.
+                  </p>
+                ) : (
+                  <div className="grid max-h-56 gap-2 overflow-y-auto">
+                    {notifications.map((notification) => (
+                      <button
+                        key={notification._id}
+                        type="button"
+                        onClick={() => {
+                          if (!notification.is_read) {
+                            markNotificationRead(notification._id);
+                          }
+                        }}
+                        className={`rounded-xl border px-3 py-2 text-left ${
+                          notification.is_read
+                            ? "border-emerald-200 bg-white dark:border-emerald-900/40 dark:bg-emerald-950/40"
+                            : "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-900/30"
+                        }`}
+                      >
+                        <p className="text-xs font-semibold text-emerald-900 dark:text-emerald-100">
+                          {notification.title}
+                        </p>
+                        <p className="mt-1 text-xs text-emerald-700/85 dark:text-emerald-300/85">
+                          {notification.message}
+                        </p>
+                        <p className="mt-1 text-[11px] text-emerald-700/65 dark:text-emerald-300/65">
+                          {formatNotificationTime(notification.createdAt)}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {needsEmailVerification && (
               <div className="border-t border-amber-300/70 bg-amber-50 px-4 py-3 sm:px-6 lg:px-8 dark:border-amber-700/60 dark:bg-amber-900/20">

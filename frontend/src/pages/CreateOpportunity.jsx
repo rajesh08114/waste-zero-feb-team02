@@ -102,7 +102,7 @@ const CreateOpportunity = () => {
   };
 
   return (
-    <div className="flex min-h-screen justify-center bg-gradient-to-br from-emerald-50 to-white px-4 py-16 dark:from-emerald-950 dark:to-black">
+    <div className="flex min-h-screen justify-center bg-linear-to-br from-emerald-50 to-white px-4 py-16 dark:from-emerald-950 dark:to-black">
       <div className="w-full max-w-3xl rounded-3xl border border-emerald-200/60 bg-white p-12 shadow-2xl backdrop-blur-md transition-all duration-300 dark:border-emerald-900/60 dark:bg-emerald-950/70">
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-emerald-100">
@@ -237,7 +237,7 @@ const CreateOpportunity = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 py-3.5 font-semibold tracking-wide text-white shadow-lg transition-all duration-300 hover:from-emerald-500 hover:to-green-400 hover:shadow-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-xl bg-linear-to-r from-emerald-600 to-green-500 py-3.5 font-semibold tracking-wide text-white shadow-lg transition-all duration-300 hover:from-emerald-500 hover:to-green-400 hover:shadow-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Creating Opportunity..." : "Create Opportunity"}
             </button>

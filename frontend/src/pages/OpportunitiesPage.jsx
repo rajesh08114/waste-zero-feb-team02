@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 import { opportunityApi } from "../api/opportunityApi";
 import { useAppStore } from "../store/useAppStore";
 
@@ -86,8 +87,8 @@ const OpportunitiesPage = () => {
               key={opportunity._id}
               className="rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-emerald-900/50 dark:bg-emerald-950/60"
             >
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
                   <h2 className="text-lg font-semibold text-emerald-900 dark:text-emerald-100">
                     {opportunity.title}
                   </h2>
@@ -111,16 +112,24 @@ const OpportunitiesPage = () => {
                       </span>
                     ))}
                   </div>
-                </div>
+                  </div>
 
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusBadgeClass(
-                    opportunity.status,
-                  )}`}
-                >
-                  {opportunity.status}
-                </span>
-              </div>
+                  <div className="flex flex-col items-start gap-3 md:items-end">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusBadgeClass(
+                        opportunity.status,
+                      )}`}
+                    >
+                      {opportunity.status}
+                    </span>
+                    <Link
+                      to={`/opportunities/${opportunity._id}`}
+                      className="rounded-lg border border-emerald-400 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+                    >
+                      View Details
+                    </Link>
+                  </div>
+                </div>
             </article>
           ))}
         </div>

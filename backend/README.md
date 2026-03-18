@@ -1,50 +1,14 @@
 # Waste Zero Backend
 
-Backend API for Waste Zero. This service currently provides:
-- User authentication and profile management
-- Email verification flow
-- Opportunity CRUD with NGO role + ownership enforcement
+Backend API for auth, opportunities, matching, messaging, notifications, and real-time chat.
 
 ## Tech Stack
-- Node.js (ES modules)
-- Express 5
+- Node.js + Express 5
 - MongoDB + Mongoose
-- JWT (`jsonwebtoken`)
-- `bcrypt` for password hashing
-- `nodemailer` for verification emails
+- JWT auth
+- Socket.io
 
-## Current Project Structure
-```text
-backend/
-|- controllers/
-|  |- user.controller.js
-|  `- opportunity.controller.js
-|- dbconfig/
-|  `- config.js
-|- middleware/
-|  |- user.middleware.js
-|  `- error.middleware.js
-|- models/
-|  |- User.js
-|  `- Opportunity.js
-|- routes/
-|  |- user.routes.js
-|  `- opportunity.routes.js
-|- utils/
-|  |- email.js
-|  `- AppError.js
-|- .env.example
-|- .env.samples
-|- package.json
-`- server.js
-```
-
-## Prerequisites
-- Node.js 18+
-- npm
-- MongoDB connection string
-
-## Setup and Run
+## Setup
 ```bash
 npm install
 cp .env.example .env
@@ -58,11 +22,9 @@ npm install
 npm run dev
 ```
 
-Server default URL: `http://localhost:3000`
+Default server URL: `http://localhost:3000`
 
 ## Environment Variables
-Use `.env.example` as template.
-
 ```env
 # Database
 MONGO_URI=your_mongodb_connection_string
@@ -77,229 +39,99 @@ REFRESH_TOKEN_EXPIRY=7d
 PORT=3000
 FRONTEND_URL=http://localhost:5173
 
-# Email (SMTP)
+# Email
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your_email@example.com
 EMAIL_PASS=your_email_app_password
 ```
 
-## API Basics
-- Base URL: `http://localhost:3000/api/v1`
-- Auth header format: `Authorization: Bearer <accessToken>`
-- Common error response:
-```json
-{ "message": "Error text here" }
-```
+## Milestone 3 Data Models
 
-### Authorization Rules
-- Only `NGO` users can `create/update/delete` opportunities.
-- Only the owner NGO (`ngo_id`) can update or delete its opportunity.
-- Volunteers have read-only access for opportunities.
+### `matches`
+- `volunteer_id`, `ngo_id`, `opportunity_id`
+- `skill_overlap`, `skill_score`, `location_score`, `score`
+- `is_active`, `last_evaluated_at`
+- Indexes:
+  - unique `(volunteer_id, opportunity_id)`
+  - `(opportunity_id, is_active, score)`
 
-### Status Code Rules
-- `401`: unauthorized (missing/invalid token)
-- `403`: forbidden (role/ownership violation)
-- `400`: invalid request/invalid ID/input validation failure
-- `404`: resource not found
+### `messages`
+- `sender_id`, `receiver_id`, `content`, `timestamp`
+- `conversation_id` (sorted user-id pair)
+- Indexes:
+  - `(sender_id, receiver_id, timestamp)`
+  - `(conversation_id, timestamp)`
 
-## Endpoints Summary
+### `notifications`
+- `user_id`, `type` (`newMatch`, `newMessage`)
+- `title`, `message`, `metadata`, `is_read`
+- Index: `(user_id, is_read, createdAt)`
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/register` | No | Register user (volunteer or NGO) |
-| POST | `/login` | No | Login and receive access/refresh tokens |
-| POST | `/refresh-token` | No | Get new access token from refresh token |
-| GET | `/verify-email?token=...` | No | Verify email with token |
-| GET | `/me` | Yes | Get current user profile |
-| PUT | `/me` | Yes | Update current user profile |
-| PUT | `/me/password` | Yes | Change password |
-| POST | `/me/verify-email` | Yes | Generate and send verification link |
-| POST | `/opportunities` | Yes (NGO only) | Create opportunity |
-| GET | `/opportunities` | No | List opportunities (supports filters) |
-| GET | `/opportunities/:id` | No | Get one opportunity |
-| PUT | `/opportunities/:id` | Yes (NGO owner only) | Update opportunity |
-| DELETE | `/opportunities/:id` | Yes (NGO owner only) | Delete opportunity |
+## Matching Logic
+- Skill overlap between volunteer skills and `required_skills`
+- Location proximity scoring (exact/nearby text match)
+- Score-based eligibility with minimum threshold
+- Stored in `matches` collection and ranked by score
 
-## Detailed Endpoint Usage
+## API Base
+`http://localhost:3000/api/v1`
 
-### 1) Register
+## Endpoint Summary
+
+### Auth + User
 - `POST /register`
-```json
-{
-  "name": "Green NGO",
-  "email": "ngo@example.com",
-  "password": "StrongPassword123",
-  "role": "NGO",
-  "skills": ["awareness", "logistics"],
-  "location": "Delhi",
-  "bio": "Community NGO"
-}
-```
-
-### 2) Login
 - `POST /login`
-```json
-{
-  "email": "ngo@example.com",
-  "password": "StrongPassword123"
-}
-```
-- Success includes:
-  - `accessToken`
-  - `refreshToken`
-  - `user` object
-
-### 3) Refresh Access Token
 - `POST /refresh-token`
-```json
-{
-  "refreshToken": "<refreshToken>"
-}
-```
-
-### 4) Start Email Verification
-- `POST /me/verify-email` (auth required)
-- Sends email and returns verification link in response.
-
-### 5) Verify Email
-- `GET /verify-email?token=<token>`
-
-### 6) Get/Update Profile
+- `GET /verify-email`
 - `GET /me`
 - `PUT /me`
-```json
-{
-  "name": "Updated Name",
-  "skills": ["awareness", "field-work"],
-  "location": "Mumbai",
-  "bio": "Updated bio"
-}
-```
-
-### 7) Change Password
 - `PUT /me/password`
-```json
-{
-  "currentPassword": "StrongPassword123",
-  "newPassword": "NewStrongPassword456"
-}
-```
+- `POST /me/verify-email`
 
-### 8) Create Opportunity (NGO only)
-- `POST /opportunities`
-```json
-{
-  "title": "Weekend Food Rescue Drive",
-  "description": "Collect and redistribute excess food",
-  "required_skills": ["coordination", "communication"],
-  "duration": "6 weeks",
-  "location": "Delhi",
-  "status": "open"
-}
-```
-- `ngo_id` is always extracted from JWT and cannot be supplied by client.
-
-### 9) Get All Opportunities
+### Opportunities
+- `POST /opportunities` (NGO)
 - `GET /opportunities`
-- Optional query params:
-  - `location` (case-insensitive match)
-  - `skills` (comma-separated or repeated values in query)
-  - `status` (`open`, `closed`, `in-progress`)
-
-Examples:
-- `/opportunities?location=delhi`
-- `/opportunities?skills=communication,coordination`
-- `/opportunities?status=open`
-- `/opportunities?location=delhi&skills=logistics&status=open`
-
-### 10) Get Single Opportunity
 - `GET /opportunities/:id`
+- `PUT /opportunities/:id` (owner NGO)
+- `DELETE /opportunities/:id` (owner NGO)
 
-### 11) Update Opportunity (NGO owner only)
-- `PUT /opportunities/:id`
-- Allowed fields only:
-  - `title`, `description`, `required_skills`, `duration`, `location`, `status`
-- `ngo_id` modification is blocked.
+### Matches
+- `GET /matches` (volunteer): ranked matched opportunities
+- `GET /matches/:opportunityId` (NGO owner): matched volunteers
 
-### 12) Delete Opportunity (NGO owner only)
-- `DELETE /opportunities/:id`
+### Messages
+- `POST /messages`
+  - body: `{ "receiver_id": "...", "content": "..." }`
+  - validates matched user pair
+- `GET /messages`
+  - conversation list for current user
+- `GET /messages/:userId`
+  - history with one user, sorted by timestamp
+  - query: `limit`, `before` (optional)
 
-## Postman API Testing Guide
+### Notifications
+- `GET /notifications?limit=20`
+- `PATCH /notifications/:id/read`
+- `PATCH /notifications/read-all`
 
-### 1) Create environment variables
-In Postman environment, create:
-- `base_url` = `http://localhost:3000/api/v1`
-- `access_token` = (empty initially)
-- `refresh_token` = (empty initially)
-- `opportunity_id` = (empty initially)
-- `verification_token` = (optional, empty initially)
+## Socket.io
+- Connection auth: JWT in `auth.token` or `Authorization` header
+- User room: `user:<userId>`
+- Incoming event:
+  - `sendMessage` payload: `{ receiver_id, content }`
+- Outgoing events:
+  - `newMessage`
+  - `newNotification`
+  - `newMatch` (via notification event type)
 
-### 2) Create request collection
-Recommended folders:
-- `Auth`
-- `User`
-- `Opportunities`
+## Security and Validation
+- Role + ownership checks enforced on protected routes
+- Chat only allowed between matched NGO-volunteer pairs
+- Socket sender spoof prevention (sender from JWT only)
+- Message rate limit per sender
+- Input validation for IDs and payloads
 
-Use request URL format: `{{base_url}}/...`
-
-### 3) Token capture tests in Login request
-In the `POST /login` request, add this to Tests tab:
-```javascript
-const json = pm.response.json();
-if (json.accessToken) pm.environment.set("access_token", json.accessToken);
-if (json.refreshToken) pm.environment.set("refresh_token", json.refreshToken);
-```
-
-For authenticated requests, set Authorization type to `Bearer Token` and value:
-`{{access_token}}`
-
-### 4) Opportunity ID capture tests
-In `POST /opportunities` Tests tab:
-```javascript
-const json = pm.response.json();
-if (json._id) pm.environment.set("opportunity_id", json._id);
-```
-
-### 5) Recommended manual test sequence
-1. Register NGO user (`POST /register`)
-2. Login NGO (`POST /login`) and store tokens
-3. Create opportunity (`POST /opportunities`)
-4. List opportunities (`GET /opportunities`)
-5. Get by ID (`GET /opportunities/{{opportunity_id}}`)
-6. Update same opportunity (`PUT /opportunities/{{opportunity_id}}`)
-7. Delete same opportunity (`DELETE /opportunities/{{opportunity_id}}`)
-8. Register + login volunteer and verify:
-   - `GET /opportunities` works
-   - `POST/PUT/DELETE /opportunities` returns `403`
-
-### 6) Quick negative tests
-- Invalid ID test: `GET /opportunities/123` should return `400`.
-- Missing token on NGO-only route should return `401`.
-- Non-owner NGO update/delete should return `403`.
-- Deleted or missing record should return `404`.
-
-## cURL Quick Examples
-```bash
-# Login
-curl -X POST http://localhost:3000/api/v1/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"ngo@example.com","password":"StrongPassword123"}'
-
-# Create opportunity
-curl -X POST http://localhost:3000/api/v1/opportunities \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <accessToken>" \
-  -d '{"title":"Drive","description":"Desc","required_skills":["communication"],"duration":"2 weeks","location":"Delhi","status":"open"}'
-
-# Filter opportunities
-curl "http://localhost:3000/api/v1/opportunities?location=delhi&status=open"
-```
-
-## Known Gaps
-- No automated tests yet (`npm test` is placeholder).
-- Opportunity-application cascade logic is not implemented yet (planned later milestone).
-
-## License
-ISC
-
+## Notes
+- Match notifications are emitted when a user transitions into an active match.
+- `npm test` is still a placeholder script.

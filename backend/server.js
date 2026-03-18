@@ -1,10 +1,16 @@
-﻿import express from "express";
+import express from "express";
+import http from "http";
 import cors from "cors";
 import dotenv from "dotenv";
 import userRoutes from "./routes/user.routes.js";
 import opportunityRoutes from "./routes/opportunity.routes.js";
+import matchRoutes from "./routes/match.routes.js";
+import messageRoutes from "./routes/message.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 import connectDB from "./dbconfig/config.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
+import { initSocket } from "./services/socket.service.js";
+import { sendMessage } from "./services/message.service.js";
 
 dotenv.config();
 
@@ -39,12 +45,45 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1", userRoutes);
 app.use("/api/v1/opportunities", opportunityRoutes);
+app.use("/api/v1/matches", matchRoutes);
+app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
 
-connectDB();
+const startServer = async () => {
+  await connectDB();
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  const httpServer = http.createServer(app);
+  const io = initSocket(httpServer, allowedOrigins);
+
+  io.on("connection", (socket) => {
+    socket.on("sendMessage", async (payload = {}, ack) => {
+      try {
+        const message = await sendMessage({
+          senderId: socket.user.id,
+          receiverId: payload.receiver_id,
+          content: payload.content,
+        });
+
+        if (typeof ack === "function") {
+          ack({ ok: true, message });
+        }
+      } catch (error) {
+        if (typeof ack === "function") {
+          ack({ ok: false, message: error.message || "Unable to send message" });
+        }
+      }
+    });
+  });
+
+  httpServer.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error("Server startup failed:", error);
+  process.exit(1);
 });

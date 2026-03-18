@@ -33,6 +33,16 @@ const createPrimaryItems = (dashboardPath, role) => {
         icon: PlusCircle,
         to: "/opportunities/create",
       },
+      {
+        label: "Matches",
+        icon: MessageCircle,
+        to: "/matches",
+      },
+      {
+        label: "Messages",
+        icon: MessageCircle,
+        to: "/messages",
+      },
     ];
   }
 
@@ -44,7 +54,8 @@ const createPrimaryItems = (dashboardPath, role) => {
         icon: BriefcaseBusiness,
         to: "/opportunities",
       },
-      { label: "Messages", icon: MessageCircle },
+      { label: "Matches", icon: CalendarDays, to: "/matches" },
+      { label: "Messages", icon: MessageCircle, to: "/messages" },
     ];
   }
 

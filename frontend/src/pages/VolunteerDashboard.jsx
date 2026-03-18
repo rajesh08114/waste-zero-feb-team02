@@ -2,13 +2,32 @@ import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Mail, MapPin, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import { opportunityApi } from "../api/opportunityApi";
+import { matchApi } from "../api/matchApi";
 import { useAppStore } from "../store/useAppStore";
 
 const VolunteerDashboard = () => {
   const user = useAppStore((state) => state.currentUser);
   const [loading, setLoading] = useState(true);
+  const [matchLoading, setMatchLoading] = useState(true);
   const [opportunities, setOpportunities] = useState([]);
+  const [matchedOpportunities, setMatchedOpportunities] = useState([]);
   const [fetchError, setFetchError] = useState("");
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      setMatchLoading(true);
+      try {
+        const data = await matchApi.getVolunteerMatches();
+        setMatchedOpportunities(data?.matches || []);
+      } catch {
+        setMatchedOpportunities([]);
+      } finally {
+        setMatchLoading(false);
+      }
+    };
+
+    fetchMatches();
+  }, []);
 
   useEffect(() => {
     const fetchOpportunities = async () => {
@@ -102,6 +121,75 @@ const VolunteerDashboard = () => {
         </section>
 
         <div className="space-y-6 xl:col-span-2">
+          <section className="rounded-3xl border border-emerald-200/70 bg-white/85 p-6 shadow-sm dark:border-emerald-900/40 dark:bg-emerald-950/60">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-emerald-950 dark:text-emerald-50">
+                Recommended Opportunities
+              </h2>
+              <Link
+                to="/matches"
+                className="text-sm font-semibold text-emerald-600 hover:underline dark:text-emerald-300"
+              >
+                View all matches
+              </Link>
+            </div>
+
+            {matchLoading ? (
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                Loading recommendations...
+              </p>
+            ) : matchedOpportunities.length === 0 ? (
+              <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-300">
+                No matches yet. Add skills and location in your profile to improve recommendations.
+              </p>
+            ) : (
+              <div className="grid gap-3">
+                {matchedOpportunities.slice(0, 3).map((match) => (
+                  <article
+                    key={match._id}
+                    className="rounded-2xl border border-emerald-200 bg-white p-4 dark:border-emerald-900/40 dark:bg-emerald-950/55"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+                          {match.opportunity?.title}
+                        </h3>
+                        <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80">
+                          NGO: {match.ngo?.name || "Unknown NGO"}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-800/40 dark:text-emerald-300">
+                        Score {match.score}
+                      </span>
+                    </div>
+                    <p className="mt-2 flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+                      <MapPin size={13} />
+                      {match.opportunity?.location}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(match.skill_overlap || []).map((skill) => (
+                        <span
+                          key={`${match._id}-${skill}`}
+                          className="rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-700 dark:bg-emerald-900/45 dark:text-emerald-200"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                    {match.opportunity?._id && (
+                      <Link
+                        to={`/opportunities/${match.opportunity._id}`}
+                        className="mt-3 inline-flex rounded-lg border border-emerald-400 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+                      >
+                        View Opportunity
+                      </Link>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
           <section className="rounded-3xl border border-emerald-200/70 bg-white/85 p-6 shadow-sm dark:border-emerald-900/40 dark:bg-emerald-950/60">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-emerald-950 dark:text-emerald-50">
