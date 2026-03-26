@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import Opportunity from "../models/Opportunity.js";
+import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
+import { resolveWasteSkills } from "../constants/wasteSkills.js";
 
 const VALID_STATUSES = ["open", "closed", "in-progress"];
 const UPDATE_FIELDS = [
@@ -11,23 +13,6 @@ const UPDATE_FIELDS = [
   "location",
   "status",
 ];
-
-const normalizeSkills = (skills) => {
-  if (Array.isArray(skills)) {
-    return skills
-      .map((skill) => (typeof skill === "string" ? skill.trim() : ""))
-      .filter(Boolean);
-  }
-
-  if (typeof skills === "string") {
-    return skills
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter(Boolean);
-  }
-
-  return null;
-};
 
 const normalizeTextField = (value) =>
   typeof value === "string" ? value.trim() : "";
@@ -59,10 +44,18 @@ export const createOpportunity = async (req, res, next) => {
       );
     }
 
-    const normalizedSkills = normalizeSkills(required_skills);
+    const { normalizedSkills, invalidSkills } = resolveWasteSkills(required_skills);
     if (!normalizedSkills || normalizedSkills.length === 0) {
       return next(
         new AppError("required_skills must be a non-empty array", 400),
+      );
+    }
+    if (invalidSkills.length > 0) {
+      return next(
+        new AppError(
+          `required_skills must use approved waste management skills. Invalid values: ${invalidSkills.join(", ")}`,
+          400,
+        ),
       );
     }
 
@@ -97,6 +90,8 @@ export const getAllOpportunities = async (req, res, next) => {
   try {
     const { location, skills, status } = req.query;
     const query = {};
+    const activeNgoIds = await User.find({ role: "NGO", status: "active" }).distinct("_id");
+    query.ngo_id = { $in: activeNgoIds };
 
     if (location) {
       query.location = { $regex: new RegExp(location, "i") };
@@ -112,10 +107,18 @@ export const getAllOpportunities = async (req, res, next) => {
     }
 
     if (skills) {
-      const normalizedSkills = normalizeSkills(skills);
+      const { normalizedSkills, invalidSkills } = resolveWasteSkills(skills);
       if (!normalizedSkills || normalizedSkills.length === 0) {
         return next(
           new AppError("skills filter must contain at least one skill", 400),
+        );
+      }
+      if (invalidSkills.length > 0) {
+        return next(
+          new AppError(
+            `skills filter must use approved waste management skills. Invalid values: ${invalidSkills.join(", ")}`,
+            400,
+          ),
         );
       }
       query.required_skills = { $in: normalizedSkills };
@@ -185,10 +188,20 @@ export const updateOpportunity = async (req, res, next) => {
     }
 
     if ("required_skills" in req.body) {
-      const normalizedSkills = normalizeSkills(req.body.required_skills);
+      const { normalizedSkills, invalidSkills } = resolveWasteSkills(
+        req.body.required_skills,
+      );
       if (!normalizedSkills || normalizedSkills.length === 0) {
         return next(
           new AppError("required_skills must be a non-empty array", 400),
+        );
+      }
+      if (invalidSkills.length > 0) {
+        return next(
+          new AppError(
+            `required_skills must use approved waste management skills. Invalid values: ${invalidSkills.join(", ")}`,
+            400,
+          ),
         );
       }
       req.body.required_skills = normalizedSkills;

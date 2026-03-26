@@ -1,19 +1,32 @@
 import mongoose from "mongoose";
+import { WASTE_SKILL_OPTIONS } from "../constants/wasteSkills.js";
+
+const USER_ROLES = ["volunteer", "NGO", "admin"];
+const USER_STATUSES = ["active", "suspended"];
 
 const userSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, enum: ['volunteer', 'NGO'], required: true },
-    skills: [String],
-    location: String,
-    bio: String,
-    emailVerified: { type: Boolean, default: false },
-    verificationToken: String,
-    createdAt: { type: Date, default: Date.now },
-
-    updatedAt: { type: Date, default: Date.now }
+  name: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: USER_ROLES, required: true },
+  status: {
+    type: String,
+    enum: USER_STATUSES,
+    default: "active",
+    index: true,
+  },
+  skills: [{ type: String, enum: WASTE_SKILL_OPTIONS }],
+  location: { type: String, trim: true },
+  bio: { type: String, trim: true },
+  emailVerified: { type: Boolean, default: false },
+  verificationToken: String,
+  createdAt: { type: Date, default: Date.now, index: true },
+  updatedAt: { type: Date, default: Date.now },
 });
+
+userSchema.index({ role: 1, status: 1 });
+
+export { USER_ROLES, USER_STATUSES };
 
 const User = mongoose.model("User", userSchema);
 export default User;

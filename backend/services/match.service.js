@@ -151,6 +151,9 @@ export const syncVolunteerMatches = async (volunteerId) => {
   if (volunteer.role !== "volunteer") {
     throw new AppError("Only volunteers can access this match view", 403);
   }
+  if (volunteer.status !== "active") {
+    throw new AppError("Volunteer account is not active", 403);
+  }
 
   const opportunities = await Opportunity.find({ status: "open" });
   const existingMatches = await Match.find({ volunteer_id: volunteer._id });
@@ -214,7 +217,7 @@ export const syncOpportunityMatches = async (opportunityId) => {
     throw new AppError("Opportunity not found", 404);
   }
 
-  const volunteers = await User.find({ role: "volunteer" });
+  const volunteers = await User.find({ role: "volunteer", status: "active" });
   const existingMatches = await Match.find({ opportunity_id: opportunity._id });
   const existingByVolunteer = new Map(
     existingMatches.map((match) => [String(match.volunteer_id), match]),
@@ -285,12 +288,16 @@ export const validateMatchedPair = async (senderId, receiverId) => {
   }
 
   const [sender, receiver] = await Promise.all([
-    User.findById(senderId).select("_id role name"),
-    User.findById(receiverId).select("_id role name"),
+    User.findById(senderId).select("_id role name status"),
+    User.findById(receiverId).select("_id role name status"),
   ]);
 
   if (!sender || !receiver) {
     throw new AppError("Sender or receiver not found", 404);
+  }
+
+  if (sender.status !== "active" || receiver.status !== "active") {
+    throw new AppError("Messaging is allowed only between active users", 403);
   }
 
   if (sender.role === receiver.role) {

@@ -1,11 +1,12 @@
 # Waste Zero Backend
 
-Backend API for auth, opportunities, matching, messaging, notifications, and real-time chat.
+Express + MongoDB API for auth, opportunities, matching, messaging, notifications, and admin governance.
 
-## Tech Stack
-- Node.js + Express 5
+## Stack
+- Node.js
+- Express 5
 - MongoDB + Mongoose
-- JWT auth
+- JWT
 - Socket.io
 
 ## Setup
@@ -22,64 +23,33 @@ npm install
 npm run dev
 ```
 
-Default server URL: `http://localhost:3000`
-
-## Environment Variables
+## Environment
 ```env
-# Database
 MONGO_URI=your_mongodb_connection_string
-
-# JWT
 JWT_SECRET=your_jwt_secret_key
 JWT_REFRESH_SECRET=your_jwt_refresh_secret_key
 ACCESS_TOKEN_EXPIRY=15m
 REFRESH_TOKEN_EXPIRY=7d
-
-# Server
 PORT=3000
 FRONTEND_URL=http://localhost:5173
-
-# Email
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your_email@example.com
 EMAIL_PASS=your_email_app_password
 ```
 
-## Milestone 3 Data Models
+## Roles and Status
+- Roles: `volunteer`, `NGO`, `admin`
+- User status: `active`, `suspended`
+- Suspended users cannot login, refresh tokens, call protected APIs, or open sockets
+- Public signup is limited to `volunteer` and `NGO`
 
-### `matches`
-- `volunteer_id`, `ngo_id`, `opportunity_id`
-- `skill_overlap`, `skill_score`, `location_score`, `score`
-- `is_active`, `last_evaluated_at`
-- Indexes:
-  - unique `(volunteer_id, opportunity_id)`
-  - `(opportunity_id, is_active, score)`
-
-### `messages`
-- `sender_id`, `receiver_id`, `content`, `timestamp`
-- `conversation_id` (sorted user-id pair)
-- Indexes:
-  - `(sender_id, receiver_id, timestamp)`
-  - `(conversation_id, timestamp)`
-
-### `notifications`
-- `user_id`, `type` (`newMatch`, `newMessage`)
-- `title`, `message`, `metadata`, `is_read`
-- Index: `(user_id, is_read, createdAt)`
-
-## Matching Logic
-- Skill overlap between volunteer skills and `required_skills`
-- Location proximity scoring (exact/nearby text match)
-- Score-based eligibility with minimum threshold
-- Stored in `matches` collection and ranked by score
-
-## API Base
+## Core API Base
 `http://localhost:3000/api/v1`
 
-## Endpoint Summary
+## Main Routes
 
-### Auth + User
+### Auth and Profile
 - `POST /register`
 - `POST /login`
 - `POST /refresh-token`
@@ -90,48 +60,74 @@ EMAIL_PASS=your_email_app_password
 - `POST /me/verify-email`
 
 ### Opportunities
-- `POST /opportunities` (NGO)
+- `POST /opportunities`
 - `GET /opportunities`
 - `GET /opportunities/:id`
-- `PUT /opportunities/:id` (owner NGO)
-- `DELETE /opportunities/:id` (owner NGO)
+- `PUT /opportunities/:id`
+- `DELETE /opportunities/:id`
 
 ### Matches
-- `GET /matches` (volunteer): ranked matched opportunities
-- `GET /matches/:opportunityId` (NGO owner): matched volunteers
+- `GET /matches`
+- `GET /matches/:opportunityId`
 
 ### Messages
-- `POST /messages`
-  - body: `{ "receiver_id": "...", "content": "..." }`
-  - validates matched user pair
 - `GET /messages`
-  - conversation list for current user
+- `POST /messages`
 - `GET /messages/:userId`
-  - history with one user, sorted by timestamp
-  - query: `limit`, `before` (optional)
 
 ### Notifications
-- `GET /notifications?limit=20`
+- `GET /notifications`
 - `PATCH /notifications/:id/read`
 - `PATCH /notifications/read-all`
 
-## Socket.io
-- Connection auth: JWT in `auth.token` or `Authorization` header
-- User room: `user:<userId>`
-- Incoming event:
-  - `sendMessage` payload: `{ receiver_id, content }`
-- Outgoing events:
-  - `newMessage`
-  - `newNotification`
-  - `newMatch` (via notification event type)
+### Admin
+- `GET /admin/overview`
+- `GET /admin/users`
+- `PATCH /admin/users/:id/status`
+- `GET /admin/opportunities`
+- `DELETE /admin/opportunities/:id`
+- `GET /admin/reports`
+- `GET /admin/logs`
 
-## Security and Validation
-- Role + ownership checks enforced on protected routes
-- Chat only allowed between matched NGO-volunteer pairs
-- Socket sender spoof prevention (sender from JWT only)
-- Message rate limit per sender
-- Input validation for IDs and payloads
+## Milestone 4 Models
 
-## Notes
-- Match notifications are emitted when a user transitions into an active match.
-- `npm test` is still a placeholder script.
+### `users`
+- Added `role: admin`
+- Added `status: active | suspended`
+- Index: `(role, status)`
+
+### `admin_logs`
+- `action`
+- `admin_id`
+- `target_user_id`
+- `target_opportunity_id`
+- `metadata`
+- timestamp via `createdAt`
+- Index: `createdAt`
+
+## Admin Features
+- Admin-only RBAC on all `/admin/*` routes
+- Overview counts for users and opportunities
+- User search, filters, pagination, suspend/activate actions
+- Opportunity moderation with filters and admin override delete
+- Reports with date range filters
+- CSV and PDF report export from `GET /admin/reports?format=csv|pdf`
+- Audit log feed from `GET /admin/logs`
+
+## Security Notes
+- Admin action rate limiting is applied to sensitive admin mutations and report exports
+- Self-suspension is blocked
+- No bulk delete endpoints are exposed
+- Chat remains restricted to matched NGO-volunteer pairs
+
+## Socket Events
+- Client emits: `sendMessage`
+- Server emits: `newMessage`, `newNotification`, `newMatch`
+
+## Validation
+- `node --check backend/server.js`
+- `node --check backend/controllers/admin.controller.js`
+- `node --check backend/services/admin.service.js`
+
+## License
+MIT. See [LICENSE](C:/Users/chall/OneDrive/Desktop/waste_zero/waste-zero-feb-team02/LICENSE).

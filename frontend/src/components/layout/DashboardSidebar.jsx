@@ -1,17 +1,18 @@
 import {
-  CircleHelp,
+  BarChart3,
   LayoutDashboard,
   LogOut,
   MessageCircle,
   Recycle,
-  Settings,
-  Shield,
   UserRound,
   CalendarDays,
   BriefcaseBusiness,
   PlusCircle,
+  ScrollText,
+  Users,
 } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
+import { SITE_NAME } from "../../constants/site";
 import ThemeControl from "../theme/ThemeControl";
 
 const createPrimaryItems = (dashboardPath, role) => {
@@ -59,31 +60,27 @@ const createPrimaryItems = (dashboardPath, role) => {
     ];
   }
 
+  if (role === "admin") {
+    return [
+      { label: "Overview", icon: LayoutDashboard, to: "/admin" },
+      { label: "Users", icon: Users, to: "/admin/users" },
+      {
+        label: "Opportunities",
+        icon: BriefcaseBusiness,
+        to: "/admin/opportunities",
+      },
+      { label: "Reports", icon: BarChart3, to: "/admin/reports" },
+      { label: "Logs", icon: ScrollText, to: "/admin/logs" },
+    ];
+  }
+
   return [];
 };
 
-const settingsItems = [
-  { label: "My Profile", icon: UserRound, to: "/profile" },
-  { label: "Settings", icon: Settings },
-  { label: "Help & Support", icon: CircleHelp },
-  { label: "Admin Panel", icon: Shield },
-];
+const secondaryItems = [{ label: "My Profile", icon: UserRound, to: "/profile" }];
 
 const SidebarItem = ({ item, onSelect, dashboardPath }) => {
   const Icon = item.icon;
-
-  if (!item.to) {
-    return (
-      <button
-        type="button"
-        disabled
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-emerald-900/55 dark:text-emerald-100/45"
-      >
-        <Icon size={17} />
-        {item.label}
-      </button>
-    );
-  }
 
   return (
     <NavLink
@@ -117,7 +114,7 @@ const DashboardSidebar = ({ user, dashboardPath, onLogout, onSelect }) => {
           size={24}
           className="transition-transform duration-700 group-hover:rotate-180"
         />
-        WasteZero
+        {SITE_NAME}
       </Link>
 
       <div className="mt-8 space-y-6 overflow-y-auto">
@@ -139,11 +136,16 @@ const DashboardSidebar = ({ user, dashboardPath, onLogout, onSelect }) => {
 
         <section>
           <p className="px-3 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-900/55 dark:text-emerald-100/55">
-            Settings
+            Account
           </p>
           <nav className="mt-3 space-y-1">
-            {settingsItems.map((item) => (
-              <SidebarItem key={item.label} item={item} onSelect={onSelect} />
+            {secondaryItems.map((item) => (
+              <SidebarItem
+                key={item.label}
+                item={item}
+                onSelect={onSelect}
+                dashboardPath={dashboardPath}
+              />
             ))}
           </nav>
         </section>

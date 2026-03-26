@@ -1,0 +1,17 @@
+export const WASTE_SKILL_OPTIONS = [
+  "Waste Segregation",
+  "Recycling Operations",
+  "Collection Logistics",
+  "Route Planning",
+  "Composting",
+  "E-Waste Handling",
+  "Hazardous Waste Safety",
+  "Material Recovery",
+  "Cleanup Operations",
+  "Community Recycling Outreach",
+  "Environmental Education",
+  "Data Reporting",
+  "Volunteer Coordination",
+  "Site Supervision",
+  "Sustainable Event Support",
+];

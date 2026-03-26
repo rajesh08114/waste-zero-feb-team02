@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAppStore } from "../../store/useAppStore";
+import { getDashboardRoute } from "../../utils/dashboardRoute";
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const location = useLocation();
@@ -21,8 +22,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   }
 
   if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
-    const fallbackPath =
-      user.role === "NGO" ? "/dashboard/ngo" : "/dashboard/volunteer";
+    const fallbackPath = getDashboardRoute(user);
     return <Navigate to={fallbackPath} replace />;
   }
 

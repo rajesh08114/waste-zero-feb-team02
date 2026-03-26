@@ -19,10 +19,13 @@ import OpportunityDetailsPage from "./pages/OpportunityDetailsPage";
 import MatchesPage from "./pages/MatchesPage";
 import MessagesPage from "./pages/MessagesPage";
 import ChatPage from "./pages/ChatPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminOpportunitiesPage from "./pages/AdminOpportunitiesPage";
+import AdminReportsPage from "./pages/AdminReportsPage";
+import AdminLogsPage from "./pages/AdminLogsPage";
 import { useAppStore } from "./store/useAppStore";
-
-const getDashboardRoute = (user) =>
-  user?.role === "NGO" ? "/dashboard/ngo" : "/dashboard/volunteer";
+import { getDashboardRoute } from "./utils/dashboardRoute";
 
 const PublicOnlyRoute = ({ children }) => {
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
@@ -162,6 +165,61 @@ function App() {
             <ProtectedRoute allowedRoles={["NGO"]}>
               <DashboardLayout>
                 <NGODashboard />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <DashboardLayout>
+                <AdminDashboard />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <DashboardLayout>
+                <AdminUsersPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/opportunities"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <DashboardLayout>
+                <AdminOpportunitiesPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/reports"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <DashboardLayout>
+                <AdminReportsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/logs"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <DashboardLayout>
+                <AdminLogsPage />
               </DashboardLayout>
             </ProtectedRoute>
           }

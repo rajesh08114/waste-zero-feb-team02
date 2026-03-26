@@ -1,23 +1,12 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { opportunityApi } from "../api/opportunityApi";
-
-const SKILL_OPTIONS = [
-  "Community Outreach",
-  "Communication",
-  "Coordination",
-  "Data Entry",
-  "Event Management",
-  "Fundraising",
-  "Logistics",
-  "Social Media",
-  "Teaching",
-  "Teamwork",
-];
+import WasteSkillSelect from "../components/common/WasteSkillSelect";
 
 const STATUS_OPTIONS = [
   { value: "open", label: "Open" },
+  { value: "in-progress", label: "In Progress" },
   { value: "closed", label: "Closed" },
 ];
 
@@ -35,17 +24,10 @@ const CreateOpportunity = () => {
   const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-
-  const selectedSkillsPreview = useMemo(
-    () => formData.requiredSkills.join(", "),
-    [formData.requiredSkills],
-  );
 
   const updateField = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
-    setSuccessMessage("");
   };
 
   const validateForm = () => {
@@ -70,11 +52,6 @@ const CreateOpportunity = () => {
     updateField(name, value);
   };
 
-  const handleSkillsChange = (event) => {
-    const selected = Array.from(event.target.selectedOptions, (item) => item.value);
-    updateField("requiredSkills", selected);
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!validateForm()) return;
@@ -90,7 +67,6 @@ const CreateOpportunity = () => {
         status: formData.status,
       });
 
-      setSuccessMessage("Opportunity created successfully.");
       toast.success("Opportunity created successfully");
       navigate("/dashboard/ngo", { replace: true });
     } catch (error) {
@@ -179,35 +155,13 @@ const CreateOpportunity = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-emerald-200">
-              Required Skills <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="requiredSkills"
-              value={formData.requiredSkills}
-              onChange={handleSkillsChange}
-              multiple
-              className="h-40 w-full rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm text-gray-900 shadow-sm outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-500 dark:border-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100"
-            >
-              {SKILL_OPTIONS.map((skill) => (
-                <option key={skill} value={skill}>
-                  {skill}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-500 dark:text-emerald-400">
-              Hold Ctrl (Windows) or Command (Mac) to select multiple skills.
-            </p>
-            {selectedSkillsPreview && (
-              <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                Selected: {selectedSkillsPreview}
-              </p>
-            )}
-            {errors.requiredSkills && (
-              <p className="text-xs text-red-500">{errors.requiredSkills}</p>
-            )}
-          </div>
+          <WasteSkillSelect
+            label="Required Waste-Service Skills *"
+            value={formData.requiredSkills}
+            onChange={(skills) => updateField("requiredSkills", skills)}
+            error={errors.requiredSkills}
+            helperText="Select skills directly related to recycling, waste handling, collection, or community cleanup services."
+          />
 
           <div className="space-y-2">
             <label className="text-sm font-semibold text-gray-700 dark:text-emerald-200">
@@ -226,12 +180,6 @@ const CreateOpportunity = () => {
               ))}
             </select>
           </div>
-
-          {successMessage && (
-            <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-              {successMessage}
-            </p>
-          )}
 
           <div className="pt-2">
             <button

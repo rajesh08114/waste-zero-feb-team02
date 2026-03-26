@@ -1,12 +1,11 @@
-﻿import RecyclingIcon from "@mui/icons-material/Recycling";
+import { Recycle } from "lucide-react";
+import { SITE_NAME } from "../../constants/site";
 
 const AuthLayout = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-
-      {/* LEFT SIDE — YOUR UI */}
+      {/* LEFT SIDE - YOUR UI */}
       <div className="hidden md:flex md:w-1/2 relative items-center justify-center text-white overflow-hidden">
-
         {/* Background image */}
         <img
           src="/auth-bg.jpg"
@@ -19,12 +18,9 @@ const AuthLayout = ({ children }) => {
 
         {/* Content */}
         <div className="relative z-10 px-12">
-
           <div className="flex items-center gap-3 mb-6">
-            <RecyclingIcon sx={{ fontSize: 40 }} className="animate-spin-slow" />
-            <h1 className="text-4xl font-bold tracking-wide">
-              WasteZero
-            </h1>
+            <Recycle size={40} className="animate-spin-slow" />
+            <h1 className="text-4xl font-bold tracking-wide">{SITE_NAME}</h1>
           </div>
 
           <h2 className="text-5xl font-extrabold leading-tight mb-6">
@@ -32,19 +28,16 @@ const AuthLayout = ({ children }) => {
           </h2>
 
           <p className="text-lg text-emerald-100/90 max-w-xl">
-            Join a global movement for sustainable living.
-            WasteZero connects people, NGOs, and volunteers
-            to create a cleaner, greener world.
+            Join a global movement for sustainable living. {SITE_NAME} connects
+            people, NGOs, and volunteers to create a cleaner, greener world.
           </p>
-
         </div>
       </div>
 
-      {/* RIGHT SIDE — FORM AREA */}
+      {/* RIGHT SIDE - FORM AREA */}
       <div className="w-full md:w-1/2 flex items-center justify-center bg-white dark:bg-slate-950 px-4 sm:px-6 py-8 sm:py-10">
         {children}
       </div>
-
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { authApi } from "../api/authApi";
 import { useAppStore } from "../store/useAppStore";
 import { getApiErrorMessage } from "../utils/apiError";
+import { getDashboardRoute } from "../utils/dashboardRoute";
 
 const VerifyEmail = () => {
   const location = useLocation();
@@ -16,10 +17,7 @@ const VerifyEmail = () => {
     return query.get("token");
   }, [location.search]);
 
-  const dashboardPath = useMemo(() => {
-    if (currentUser?.role === "NGO") return "/dashboard/ngo";
-    return "/dashboard/volunteer";
-  }, [currentUser?.role]);
+  const dashboardPath = useMemo(() => getDashboardRoute(currentUser), [currentUser]);
 
   const [status, setStatus] = useState(token ? "verifying" : "error");
   const [message, setMessage] = useState(

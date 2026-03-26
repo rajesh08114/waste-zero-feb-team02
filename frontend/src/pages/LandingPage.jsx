@@ -1,11 +1,18 @@
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { Link } from "react-router-dom";
+import { Check } from "lucide-react";
+import { useAppStore } from "../store/useAppStore";
+import { getDashboardRoute } from "../utils/dashboardRoute";
 import heroImage from "../assets/hero.png";
 import aboutImage from "../assets/about.png";
 import howImage from "../assets/how.png";
 
 const LandingPage = () => {
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+  const currentUser = useAppStore((state) => state.currentUser);
+  const dashboardPath = getDashboardRoute(currentUser);
+
   return (
     <div
       className="
@@ -20,7 +27,6 @@ const LandingPage = () => {
     dark:text-gray-200
   "
     >
-      {" "}
       <Navbar />
       {/* HERO SECTION */}
       <section id="home" className="px-6 pt-16 pb-12 lg:px-20">
@@ -42,21 +48,29 @@ const LandingPage = () => {
 
             {/* BUTTONS */}
             <div className="mt-8 flex flex-wrap gap-4">
-              {/* Signup Button */}
-              <Link
-                to="/signup"
-                className="rounded-full bg-[#16A34A] px-8 py-3 font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#15803D]"
-              >
-                Get Started
-              </Link>
-
-              {/* Login Button */}
-              <Link
-                to="/login"
-                className="rounded-full border-2 border-[#16A34A] px-8 py-3 font-semibold text-[#16A34A] transition hover:bg-[#16A34A] hover:text-white"
-              >
-                Login
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  to={dashboardPath}
+                  className="rounded-full bg-[#16A34A] px-8 py-3 font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#15803D]"
+                >
+                  Open Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to="/signup"
+                    className="rounded-full bg-[#16A34A] px-8 py-3 font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#15803D]"
+                  >
+                    Get Started
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="rounded-full border-2 border-[#16A34A] px-8 py-3 font-semibold text-[#16A34A] transition hover:bg-[#16A34A] hover:text-white"
+                  >
+                    Login
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* STATS */}
@@ -118,7 +132,7 @@ const LandingPage = () => {
                   className="flex items-center gap-4 bg-white dark:bg-[#1B4332] px-6 py-4 rounded-2xl shadow-md hover:shadow-xl transition duration-300"
                 >
                   <div className="w-8 h-8 flex items-center justify-center bg-[#B3D8A8] rounded-full text-[#3D8D7A] font-bold">
-                    ✓
+                    <Check size={16} />
                   </div>
                   <span className="font-medium text-gray-700 dark:text-gray-200">
                     {item}
@@ -229,19 +243,30 @@ const LandingPage = () => {
           </p>
 
           <div className="mt-8 flex justify-center gap-4 flex-wrap">
-            <Link
-              to="/signup"
-              className="bg-white text-[#3D8D7A] px-8 py-3 rounded-full font-semibold shadow-md hover:scale-105 transition"
-            >
-              Join the Movement
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to={dashboardPath}
+                className="bg-white text-[#3D8D7A] px-8 py-3 rounded-full font-semibold shadow-md hover:scale-105 transition"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/signup"
+                  className="bg-white text-[#3D8D7A] px-8 py-3 rounded-full font-semibold shadow-md hover:scale-105 transition"
+                >
+                  Join the Movement
+                </Link>
 
-            <Link
-              to="/login"
-              className="border-2 border-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-[#3D8D7A] transition"
-            >
-              Sign In
-            </Link>
+                <Link
+                  to="/login"
+                  className="border-2 border-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-[#3D8D7A] transition"
+                >
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>

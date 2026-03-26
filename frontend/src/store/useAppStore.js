@@ -14,7 +14,7 @@ export const useAppStore = create(
       ...createAuthSlice(set, get),
       ...createUserSlice(set, get),
       ...createOpportunitySlice(set),
-      ...createNotificationSlice(set, get),
+      ...createNotificationSlice(set),
     }),
     {
       name: "wastezero-storage",

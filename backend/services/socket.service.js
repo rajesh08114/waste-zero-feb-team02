@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Server } from "socket.io";
+import User from "../models/User.js";
 
 let ioInstance = null;
 const onlineUsers = new Map();
@@ -57,7 +58,7 @@ export const initSocket = (httpServer, allowedOrigins = []) => {
     },
   });
 
-  ioInstance.use((socket, next) => {
+  ioInstance.use(async (socket, next) => {
     const token = extractToken(socket);
     if (!token) {
       next(new Error("Socket auth token missing"));
@@ -66,11 +67,20 @@ export const initSocket = (httpServer, allowedOrigins = []) => {
 
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(payload.id).select(
+        "_id name email role status",
+      );
+
+      if (!user || user.status === "suspended") {
+        next(new Error("Socket user unavailable"));
+        return;
+      }
+
       socket.user = {
-        id: payload.id,
-        role: payload.role,
-        email: payload.email,
-        name: payload.name,
+        id: String(user._id),
+        role: user.role,
+        email: user.email,
+        name: user.name,
       };
       next();
     } catch {

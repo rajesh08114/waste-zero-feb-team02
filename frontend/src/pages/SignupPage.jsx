@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAppStore } from "../store/useAppStore";
 import AuthLayout from "./Auth/AuthLayout";
+import { getDashboardRoute } from "../utils/dashboardRoute";
+import WasteSkillSelect from "../components/common/WasteSkillSelect";
 
 const initialFormState = {
   name: "",
@@ -11,7 +13,7 @@ const initialFormState = {
   role: "volunteer",
   location: "",
   bio: "",
-  skills: "",
+  skills: [],
 };
 
 const SignupPage = () => {
@@ -24,13 +26,19 @@ const SignupPage = () => {
   const [formState, setFormState] = useState(initialFormState);
   const [localError, setLocalError] = useState("");
 
-  if (isAuthenticated) return <Navigate to="/dashboard/volunteer" replace />;
+  const currentUser = useAppStore((state) => state.currentUser);
+
+  if (isAuthenticated) return <Navigate to={getDashboardRoute(currentUser)} replace />;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     clearAuthError();
     setLocalError("");
-    setFormState((prev) => ({ ...prev, [name]: value }));
+    setFormState((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "role" && value !== "volunteer" ? { skills: [] } : {}),
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -48,7 +56,7 @@ const SignupPage = () => {
       role: formState.role,
       location: formState.location,
       bio: formState.bio,
-      skills: formState.skills.split(",").map((s) => s.trim()),
+      skills: formState.skills,
     };
 
     await signup(payload);
@@ -115,13 +123,16 @@ const SignupPage = () => {
             className="w-full border rounded-lg px-4 py-3 dark:bg-slate-900 dark:text-white"
           />
 
-          <input
-            name="skills"
-            placeholder="Skills (comma separated)"
-            value={formState.skills}
-            onChange={handleChange}
-            className="w-full border rounded-lg px-4 py-3 dark:bg-slate-900 dark:text-white"
-          />
+          {formState.role === "volunteer" && (
+            <WasteSkillSelect
+              label="Waste Management Skills"
+              value={formState.skills}
+              onChange={(skills) =>
+                setFormState((prev) => ({ ...prev, skills }))
+              }
+              helperText="Choose the recycling, collection, or cleanup skills that best match your experience."
+            />
+          )}
 
           <textarea
             name="bio"
