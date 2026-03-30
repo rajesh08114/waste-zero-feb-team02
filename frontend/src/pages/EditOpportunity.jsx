@@ -3,19 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { opportunityApi } from "../api/opportunityApi";
 import { useAppStore } from "../store/useAppStore";
-
-const SKILL_OPTIONS = [
-  "Community Outreach",
-  "Communication",
-  "Coordination",
-  "Data Entry",
-  "Event Management",
-  "Fundraising",
-  "Logistics",
-  "Social Media",
-  "Teaching",
-  "Teamwork",
-];
+import WasteSkillSelect from "../components/common/WasteSkillSelect";
+import { WASTE_SKILL_OPTIONS } from "../constants/wasteSkills";
 
 const STATUS_OPTIONS = [
   { value: "open", label: "Open" },
@@ -50,6 +39,10 @@ const EditOpportunity = () => {
 
   const selectedSkillsPreview = useMemo(
     () => formData.requiredSkills.join(", "),
+    [formData.requiredSkills],
+  );
+  const skillOptions = useMemo(
+    () => Array.from(new Set([...WASTE_SKILL_OPTIONS, ...formData.requiredSkills])),
     [formData.requiredSkills],
   );
 
@@ -107,11 +100,6 @@ const EditOpportunity = () => {
   const handleChange = (event) => {
     const { name, value } = event.target;
     updateField(name, value);
-  };
-
-  const handleSkillsChange = (event) => {
-    const selected = Array.from(event.target.selectedOptions, (item) => item.value);
-    updateField("requiredSkills", selected);
   };
 
   const handleSubmit = async (event) => {
@@ -243,32 +231,18 @@ const EditOpportunity = () => {
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-emerald-200">
-              Required Skills
-            </label>
-            <select
-              name="requiredSkills"
-              value={formData.requiredSkills}
-              onChange={handleSkillsChange}
-              multiple
-              className="h-40 w-full rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm text-gray-900 outline-none transition focus:ring-2 focus:ring-emerald-500 dark:border-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100"
-            >
-              {SKILL_OPTIONS.map((skill) => (
-                <option key={skill} value={skill}>
-                  {skill}
-                </option>
-              ))}
-            </select>
-            {selectedSkillsPreview && (
-              <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                Selected: {selectedSkillsPreview}
-              </p>
-            )}
-            {errors.requiredSkills && (
-              <p className="text-xs text-red-500">{errors.requiredSkills}</p>
-            )}
-          </div>
+          <WasteSkillSelect
+            label="Required Waste-Service Skills"
+            value={formData.requiredSkills}
+            onChange={(skills) => updateField("requiredSkills", skills)}
+            error={errors.requiredSkills}
+            options={skillOptions}
+            helperText={
+              selectedSkillsPreview
+                ? "Keep the list focused on real waste management, recycling, and cleanup service skills."
+                : "Select skills directly related to recycling, waste handling, collection, or community cleanup services."
+            }
+          />
 
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">

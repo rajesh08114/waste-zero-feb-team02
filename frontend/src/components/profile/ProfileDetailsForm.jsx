@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { BriefcaseBusiness, Mail, MapPin, UserRound } from "lucide-react";
 import { useAppStore } from "../../store/useAppStore";
+import WasteSkillSelect from "../common/WasteSkillSelect";
 
 const getInitialState = (user) => ({
   name: user?.name ?? "",
   email: user?.email ?? "",
   location: user?.location ?? "",
   bio: user?.bio ?? "",
-  skills: user?.skills?.join(", ") ?? "",
+  skills: user?.skills ?? [],
 });
 
 const ProfileDetailsForm = () => {
@@ -41,10 +42,7 @@ const ProfileDetailsForm = () => {
     };
 
     if (isVolunteer) {
-      payload.skills = formState.skills
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
+      payload.skills = formState.skills;
     }
 
     const result = await updateCurrentUser(payload);
@@ -106,19 +104,21 @@ const ProfileDetailsForm = () => {
           </label>
 
           {isVolunteer && (
-            <label className="block">
-              <span className="mb-1 inline-flex items-center gap-2 text-sm font-semibold text-emerald-900/80 dark:text-emerald-100/80">
+            <div className="md:col-span-2">
+              <div className="mb-1 inline-flex items-center gap-2 text-sm font-semibold text-emerald-900/80 dark:text-emerald-100/80">
                 <BriefcaseBusiness size={15} />
                 Skills
-              </span>
-              <input
-                name="skills"
+              </div>
+              <WasteSkillSelect
+                label=""
                 value={formState.skills}
-                onChange={handleChange}
-                placeholder="Teamwork, Communication"
-                className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm text-emerald-950 outline-none transition focus:border-emerald-500 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-50"
+                onChange={(skills) => {
+                  setSaveNotice("");
+                  setFormState((prev) => ({ ...prev, skills }));
+                }}
+                helperText="Keep your volunteer skills focused on waste management, recycling, and environmental service work."
               />
-            </label>
+            </div>
           )}
         </div>
 

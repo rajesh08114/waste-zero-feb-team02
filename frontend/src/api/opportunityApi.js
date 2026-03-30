@@ -1,6 +1,11 @@
 import { apiClient } from "./axiosClient";
 
 export const opportunityApi = {
+  async getMine() {
+    const response = await apiClient.get("/opportunities/mine");
+    return response.data;
+  },
+
   async getAll(params = {}) {
     const response = await apiClient.get("/opportunities", { params });
     return response.data;

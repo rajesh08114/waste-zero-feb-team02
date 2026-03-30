@@ -1,36 +1,29 @@
-# Waste Zero (Full Stack)
+# Waste Zero
 
-Waste Zero connects volunteers and NGOs for impact opportunities, match suggestions, and real-time messaging.
+Waste Zero is a full-stack platform for volunteers, NGOs, and admins. It now covers authentication, opportunity management, matching, realtime messaging, notifications, and Milestone 4 admin governance tools.
 
-## Repository
-```text
-waste-zero-feb-team02/
-|- backend/
-|- frontend/
-`- README.md
-```
+## Milestones
+- Milestone 1-2: auth, profiles, opportunity CRUD, role protection
+- Milestone 3: match suggestions, chat, notifications, sockets
+- Milestone 4: admin overview, user moderation, opportunity moderation, analytics, exports, audit logs
 
-## Milestone Coverage
+## Roles
+- `volunteer`
+- `NGO`
+- `admin`
 
-### Milestone 1-2
-- Auth (register/login/refresh)
-- Role-based access (`volunteer`, `NGO`)
-- Opportunity CRUD with NGO ownership checks
+Public signup only creates `volunteer` and `NGO` accounts. Admin accounts should be created directly in the database or through a controlled internal workflow.
 
-### Milestone 3
-- Matching algorithm and `matches` collection
-- Volunteer/NGO matching APIs
-- Real-time 1:1 chat (Socket.io + REST)
-- Message history and conversation list APIs
-- Notification APIs + realtime notification events
-- Frontend routes and UI:
-  - `/matches`
-  - `/messages`
-  - `/chat/:userId`
+## Admin Routes
+- `/admin`
+- `/admin/users`
+- `/admin/opportunities`
+- `/admin/reports`
+- `/admin/logs`
 
 ## Quick Start
 
-### 1) Backend
+### Backend
 ```bash
 cd backend
 npm install
@@ -38,7 +31,7 @@ cp .env.example .env
 npm run dev
 ```
 
-### 2) Frontend
+### Frontend
 ```bash
 cd frontend
 npm install
@@ -50,5 +43,8 @@ Frontend: `http://localhost:5173`
 Backend: `http://localhost:3000`
 
 ## Documentation
-- Backend API + socket docs: [backend/README.md](./backend/README.md)
-- Frontend routes/state/realtime docs: [frontend/README.md](./frontend/README.md)
+- Backend API and security notes: [backend/README.md](C:/Users/chall/OneDrive/Desktop/waste_zero/waste-zero-feb-team02/backend/README.md)
+- Frontend routing and UI notes: [frontend/README.md](C:/Users/chall/OneDrive/Desktop/waste_zero/waste-zero-feb-team02/frontend/README.md)
+
+## License
+MIT. See [LICENSE](C:/Users/chall/OneDrive/Desktop/waste_zero/waste-zero-feb-team02/LICENSE).

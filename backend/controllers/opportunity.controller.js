@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 import Opportunity from "../models/Opportunity.js";
+import User, { buildActiveUserQuery } from "../models/User.js";
 import AppError from "../utils/AppError.js";
+import { resolveWasteSkills } from "../constants/wasteSkills.js";
+import {
+  deleteMatchesForOpportunity,
+  syncOpportunityMatches,
+} from "../services/match.service.js";
+import { deleteNotificationsForOpportunity } from "../services/notification.service.js";
 
 const VALID_STATUSES = ["open", "closed", "in-progress"];
 const UPDATE_FIELDS = [
@@ -11,23 +18,6 @@ const UPDATE_FIELDS = [
   "location",
   "status",
 ];
-
-const normalizeSkills = (skills) => {
-  if (Array.isArray(skills)) {
-    return skills
-      .map((skill) => (typeof skill === "string" ? skill.trim() : ""))
-      .filter(Boolean);
-  }
-
-  if (typeof skills === "string") {
-    return skills
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter(Boolean);
-  }
-
-  return null;
-};
 
 const normalizeTextField = (value) =>
   typeof value === "string" ? value.trim() : "";
@@ -59,10 +49,18 @@ export const createOpportunity = async (req, res, next) => {
       );
     }
 
-    const normalizedSkills = normalizeSkills(required_skills);
+    const { normalizedSkills, invalidSkills } = resolveWasteSkills(required_skills);
     if (!normalizedSkills || normalizedSkills.length === 0) {
       return next(
         new AppError("required_skills must be a non-empty array", 400),
+      );
+    }
+    if (invalidSkills.length > 0) {
+      return next(
+        new AppError(
+          `required_skills must use approved waste management skills. Invalid values: ${invalidSkills.join(", ")}`,
+          400,
+        ),
       );
     }
 
@@ -82,6 +80,12 @@ export const createOpportunity = async (req, res, next) => {
       ngo_id: req.user.id,
     });
 
+    try {
+      await syncOpportunityMatches(opportunity._id);
+    } catch (syncError) {
+      console.error("Failed to sync matches after opportunity creation:", syncError);
+    }
+
     const createdOpportunity = await Opportunity.findById(opportunity._id).populate(
       "ngo_id",
       "name location",
@@ -93,10 +97,29 @@ export const createOpportunity = async (req, res, next) => {
   }
 };
 
+export const getMyOpportunities = async (req, res, next) => {
+  try {
+    const opportunities = await Opportunity.find({ ngo_id: req.user.id })
+      .populate("ngo_id", "name location")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      count: opportunities.length,
+      opportunities,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getAllOpportunities = async (req, res, next) => {
   try {
     const { location, skills, status } = req.query;
     const query = {};
+    const activeNgoIds = await User.find(buildActiveUserQuery({ role: "NGO" })).distinct(
+      "_id",
+    );
+    query.ngo_id = { $in: activeNgoIds };
 
     if (location) {
       query.location = { $regex: new RegExp(location, "i") };
@@ -112,10 +135,18 @@ export const getAllOpportunities = async (req, res, next) => {
     }
 
     if (skills) {
-      const normalizedSkills = normalizeSkills(skills);
+      const { normalizedSkills, invalidSkills } = resolveWasteSkills(skills);
       if (!normalizedSkills || normalizedSkills.length === 0) {
         return next(
           new AppError("skills filter must contain at least one skill", 400),
+        );
+      }
+      if (invalidSkills.length > 0) {
+        return next(
+          new AppError(
+            `skills filter must use approved waste management skills. Invalid values: ${invalidSkills.join(", ")}`,
+            400,
+          ),
         );
       }
       query.required_skills = { $in: normalizedSkills };
@@ -185,10 +216,20 @@ export const updateOpportunity = async (req, res, next) => {
     }
 
     if ("required_skills" in req.body) {
-      const normalizedSkills = normalizeSkills(req.body.required_skills);
+      const { normalizedSkills, invalidSkills } = resolveWasteSkills(
+        req.body.required_skills,
+      );
       if (!normalizedSkills || normalizedSkills.length === 0) {
         return next(
           new AppError("required_skills must be a non-empty array", 400),
+        );
+      }
+      if (invalidSkills.length > 0) {
+        return next(
+          new AppError(
+            `required_skills must use approved waste management skills. Invalid values: ${invalidSkills.join(", ")}`,
+            400,
+          ),
         );
       }
       req.body.required_skills = normalizedSkills;
@@ -219,6 +260,11 @@ export const updateOpportunity = async (req, res, next) => {
     });
 
     await opportunity.save();
+    try {
+      await syncOpportunityMatches(opportunity._id);
+    } catch (syncError) {
+      console.error("Failed to sync matches after opportunity update:", syncError);
+    }
     await opportunity.populate("ngo_id", "name location");
 
     return res.status(200).json(opportunity);
@@ -243,7 +289,11 @@ export const deleteOpportunity = async (req, res, next) => {
       return next(new AppError("Forbidden: You can only delete your own opportunities", 403));
     }
 
-    await opportunity.deleteOne();
+    await Promise.all([
+      opportunity.deleteOne(),
+      deleteMatchesForOpportunity(opportunity._id),
+      deleteNotificationsForOpportunity(opportunity._id),
+    ]);
 
     return res.status(200).json({ message: "Opportunity deleted successfully" });
   } catch (error) {

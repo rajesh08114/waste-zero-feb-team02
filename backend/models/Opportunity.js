@@ -1,11 +1,12 @@
 import mongoose from "mongoose";
+import { WASTE_SKILL_OPTIONS } from "../constants/wasteSkills.js";
 
 const opportunitySchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
     required_skills: {
-      type: [String],
+      type: [{ type: String, enum: WASTE_SKILL_OPTIONS }],
       required: true,
       validate: {
         validator: (value) => Array.isArray(value) && value.length > 0,

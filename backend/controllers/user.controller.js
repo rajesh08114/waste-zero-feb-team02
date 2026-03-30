@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import User, { getEffectiveUserStatus } from "../models/User.js";
 import sendEmail from "../utils/email.js";
+import { resolveWasteSkills } from "../constants/wasteSkills.js";
 
 const getFrontendBaseUrl = () =>
   (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
@@ -30,14 +31,29 @@ const sendVerificationEmail = async (email, verificationLink) => {
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role, skills, location, bio } = req.body;
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    const allowedSignupRoles = ["volunteer", "NGO"];
+    const { normalizedSkills, invalidSkills } = resolveWasteSkills(skills ?? []);
 
-    if (!name || !email || !password || !role) {
+    if (!name || !normalizedEmail || !password || !role) {
       return res
         .status(400)
         .json({ message: "Name, email, password, and role are required" });
     }
 
-    const existingUser = await User.findOne({ email });
+    if (!allowedSignupRoles.includes(role)) {
+      return res.status(400).json({
+        message: "Only volunteer and NGO accounts can be created from signup.",
+      });
+    }
+
+    if (invalidSkills.length > 0) {
+      return res.status(400).json({
+        message: `Skills must be related to waste management services. Invalid values: ${invalidSkills.join(", ")}`,
+      });
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -46,10 +62,10 @@ export const registerUser = async (req, res) => {
 
     const newUser = new User({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       role,
-      skills,
+      skills: normalizedSkills || [],
       location,
       bio,
     });
@@ -157,9 +173,16 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    if (user.status === "suspended") {
+      return res
+        .status(403)
+        .json({ message: "Account suspended. Contact an administrator." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -178,6 +201,7 @@ export const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        status: getEffectiveUserStatus(user),
         emailVerified: user.emailVerified,
       },
     });
@@ -188,11 +212,13 @@ export const loginUser = async (req, res) => {
 
 export const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id).select("-password -verificationToken");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    return res.status(200).json(user);
+    const profile = user.toObject();
+    profile.status = getEffectiveUserStatus(user);
+    return res.status(200).json(profile);
   } catch (error) {
     return res.status(500).json({ message: "Server error", error });
   }
@@ -212,8 +238,18 @@ export const updateUserProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    if ("skills" in req.body) {
+      const { normalizedSkills, invalidSkills } = resolveWasteSkills(skills);
+      if (invalidSkills.length > 0) {
+        return res.status(400).json({
+          message: `Skills must be related to waste management services. Invalid values: ${invalidSkills.join(", ")}`,
+        });
+      }
+      user.skills = normalizedSkills || [];
+    }
+
     if (name) user.name = name;
-    if (skills) user.skills = skills;
     if (location) user.location = location;
     if (bio) user.bio = bio;
     user.updatedAt = Date.now();
@@ -225,6 +261,7 @@ export const updateUserProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        status: getEffectiveUserStatus(user),
         skills: user.skills,
         location: user.location,
         bio: user.bio,

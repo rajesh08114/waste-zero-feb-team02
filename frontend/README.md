@@ -1,8 +1,8 @@
 # Waste Zero Frontend
 
-React + Vite client for auth, opportunities, matching, chat, and realtime notifications.
+React + Vite client for volunteers, NGOs, and admins.
 
-## Tech Stack
+## Stack
 - React 19
 - React Router DOM 7
 - Zustand
@@ -24,9 +24,7 @@ npm install
 npm run dev
 ```
 
-Default URL: `http://localhost:5173`
-
-## Environment Variables
+## Environment
 ```env
 VITE_APP_ENV=development
 VITE_APP_NAME=Waste Zero
@@ -35,63 +33,55 @@ VITE_SOCKET_URL=http://localhost:3000
 VITE_ENABLE_DEBUG_LOGS=false
 ```
 
-## Milestone 3 Routes
+## Route Coverage
+
+### Shared
+- `/profile`
+- `/opportunities`
+- `/opportunities/:id`
+
+### Volunteer and NGO
 - `/matches`
 - `/messages`
 - `/chat/:userId`
-- `/opportunities/:id`
 
-## Feature Coverage
+### NGO
+- `/dashboard/ngo`
+- `/dashboard/ngo/opportunities`
+- `/opportunities/create`
+- `/opportunities/edit/:id`
 
-### Matching UI
-- Volunteer dashboard now includes `Recommended Opportunities`
-- Dedicated `/matches` page:
-  - Volunteer view: ranked opportunity recommendations
-  - NGO view: volunteers matched per opportunity
+### Volunteer
+- `/dashboard/volunteer`
 
-### Messaging UI
-- `/messages`: conversation list
-- `/chat/:userId`: one-to-one chat
-  - Sender/receiver bubble styling
-  - timestamps
-  - auto-scroll
-  - socket + REST fallback send
+### Admin
+- `/admin`
+- `/admin/users`
+- `/admin/opportunities`
+- `/admin/reports`
+- `/admin/logs`
 
-### Realtime Integration
-- Global `RealtimeBridge` connects socket after auth
-- Listens for:
-  - `newMessage`
-  - `newNotification`
-- Shows toast alerts
-- Updates notification state live
+## Milestone 4 UI
+- Admin overview cards and recent activity feed
+- User management table with search, role/status filters, pagination, profile modal
+- Opportunity moderation screen with filters, detail modal, remove action
+- Reports dashboard with date range filter, trend charts, participation table, CSV/PDF export
+- Admin audit log page with action filter and pagination
+- Admin-specific sidebar navigation and route protection
 
-### Notifications
-- Notification badge in dashboard header
-- Notification panel with read/unread state
-- Mark single notification or mark all read
-- API + websocket hybrid refresh flow
+## Shared Realtime Features
+- Global notification panel in the dashboard header
+- Match and message toasts via socket bridge
+- Chat UI with realtime delivery and REST fallback
 
-## API Modules Added
-- `src/api/matchApi.js`
-- `src/api/messageApi.js`
-- `src/api/notificationApi.js`
-
-## Realtime Module Added
-- `src/services/socketClient.js`
-
-## State Updates
-- Added notification slice with:
-  - `fetchNotifications`
-  - `prependNotification`
-  - `markNotificationRead`
-  - `markAllNotificationsRead`
-
-## Scripts
-- `npm run dev`
-- `npm run build`
+## Validation
 - `npm run lint`
-- `npm run preview`
+- `npm run build`
 
-## Validation Status
-- `npm run lint`: passing
-- `npm run build`: passing
+## Cleanup Notes
+- Removed the unused `src/components/layout/Header.jsx`
+- Consolidated dashboard redirect logic into `src/utils/dashboardRoute.js`
+- Simplified dashboard sidebar account section to active links only
+
+## License
+MIT. See [LICENSE](C:/Users/chall/OneDrive/Desktop/waste_zero/waste-zero-feb-team02/LICENSE).

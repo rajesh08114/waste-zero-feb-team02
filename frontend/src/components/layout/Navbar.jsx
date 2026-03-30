@@ -2,6 +2,8 @@ import { Menu, Recycle, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAppStore } from "../../store/useAppStore";
+import { SITE_NAME } from "../../constants/site";
+import { getDashboardRoute } from "../../utils/dashboardRoute";
 import ThemeControl from "../theme/ThemeControl";
 
 const sectionLinks = [
@@ -16,10 +18,7 @@ const Navbar = () => {
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
   const currentUser = useAppStore((state) => state.currentUser);
 
-  const dashboardPath = useMemo(() => {
-    if (currentUser?.role === "NGO") return "/dashboard/ngo";
-    return "/dashboard/volunteer";
-  }, [currentUser?.role]);
+  const dashboardPath = useMemo(() => getDashboardRoute(currentUser), [currentUser]);
 
   const closeMenu = () => setMobileOpen(false);
 
@@ -35,7 +34,7 @@ const Navbar = () => {
             size={22}
             className="transition-transform duration-700 group-hover:rotate-180"
           />
-          WasteZero
+          {SITE_NAME}
         </Link>
 
         <div className="hidden items-center gap-8 lg:flex">
@@ -55,10 +54,10 @@ const Navbar = () => {
           {isAuthenticated ? (
             <>
               <Link
-                to="/opportunities"
+                to={currentUser?.role === "admin" ? "/admin/users" : "/opportunities"}
                 className="rounded-full border border-emerald-500 px-4 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-400 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
               >
-                Opportunities
+                {currentUser?.role === "admin" ? "Users" : "Opportunities"}
               </Link>
               {currentUser?.role === "NGO" && (
                 <Link
@@ -130,11 +129,11 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 <Link
-                  to="/opportunities"
+                  to={currentUser?.role === "admin" ? "/admin/users" : "/opportunities"}
                   onClick={closeMenu}
                   className="rounded-full border border-emerald-500 px-4 py-2 text-xs font-semibold text-emerald-700 dark:border-emerald-400 dark:text-emerald-200"
                 >
-                  Opportunities
+                  {currentUser?.role === "admin" ? "Users" : "Opportunities"}
                 </Link>
                 {currentUser?.role === "NGO" && (
                   <Link

@@ -1,9 +1,10 @@
 import { Bell, Menu, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { userApi } from "../../api/userApi";
 import { useAppStore } from "../../store/useAppStore";
 import { getApiErrorMessage } from "../../utils/apiError";
+import { getDashboardRoute } from "../../utils/dashboardRoute";
 import DashboardSidebar from "./DashboardSidebar";
 
 const formatNotificationTime = (value) => {
@@ -19,6 +20,7 @@ const formatNotificationTime = (value) => {
 
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useAppStore((state) => state.currentUser);
   const logout = useAppStore((state) => state.logout);
   const loadCurrentUser = useAppStore((state) => state.loadCurrentUser);
@@ -37,8 +39,7 @@ const DashboardLayout = ({ children }) => {
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
 
-  const dashboardPath =
-    user?.role === "NGO" ? "/dashboard/ngo" : "/dashboard/volunteer";
+  const dashboardPath = getDashboardRoute(user);
   const needsEmailVerification = Boolean(user && !user.emailVerified);
 
   useEffect(() => {
@@ -50,6 +51,10 @@ const DashboardLayout = ({ children }) => {
       document.body.style.overflow = previousOverflow;
     };
   }, [mobileSidebarOpen]);
+
+  useEffect(() => {
+    setGlobalSearch("");
+  }, [location.pathname, setGlobalSearch]);
 
   const handleLogout = () => {
     logout();
@@ -160,7 +165,7 @@ const DashboardLayout = ({ children }) => {
                   type="text"
                   value={globalSearch}
                   onChange={(e) => setGlobalSearch(e.target.value)}
-                  placeholder="Search pickups, opportunities..."
+                  placeholder="Search your workspace..."
                   className="w-full rounded-full border border-emerald-200 bg-white/80 py-2.5 pl-10 pr-10 text-sm text-emerald-900 outline-none transition focus:border-emerald-500 dark:border-emerald-800 dark:bg-emerald-950/75 dark:text-emerald-100"
                 />
 

@@ -7,6 +7,7 @@ import opportunityRoutes from "./routes/opportunity.routes.js";
 import matchRoutes from "./routes/match.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import connectDB from "./dbconfig/config.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 import { initSocket } from "./services/socket.service.js";
@@ -48,6 +49,7 @@ app.use("/api/v1/opportunities", opportunityRoutes);
 app.use("/api/v1/matches", matchRoutes);
 app.use("/api/v1/messages", messageRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAppStore } from "../store/useAppStore";
 import AuthLayout from "./Auth/AuthLayout";
+import { getDashboardRoute } from "../utils/dashboardRoute";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -19,10 +20,7 @@ const LoginPage = () => {
     password: "",
   });
 
-  const redirectPath = useMemo(() => {
-    if (currentUser?.role === "NGO") return "/dashboard/ngo";
-    return "/dashboard/volunteer";
-  }, [currentUser?.role]);
+  const redirectPath = useMemo(() => getDashboardRoute(currentUser), [currentUser]);
 
   if (isAuthenticated) return <Navigate to={redirectPath} replace />;
 
@@ -48,7 +46,7 @@ const LoginPage = () => {
       return;
     }
 
-    navigate(result.user?.role === "NGO" ? "/dashboard/ngo" : "/dashboard/volunteer", { replace: true });
+    navigate(getDashboardRoute(result.user), { replace: true });
   };
 
   return (

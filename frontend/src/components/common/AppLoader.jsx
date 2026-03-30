@@ -1,4 +1,5 @@
 import { Recycle } from "lucide-react";
+import { SITE_NAME } from "../../constants/site";
 
 const AppLoader = () => {
   return (
@@ -12,7 +13,7 @@ const AppLoader = () => {
         </div>
 
         <p className="text-sm font-semibold tracking-wide text-emerald-700 dark:text-emerald-300">
-          Loading WasteZero...
+          Loading {SITE_NAME}...
         </p>
       </div>
     </div>
