@@ -18,7 +18,6 @@ const statusBadgeClass = (status) => {
 };
 
 const NGOOpportunities = () => {
-  const user = useAppStore((state) => state.currentUser);
   const globalSearch = useAppStore((state) => state.globalSearch);
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,20 +27,13 @@ const NGOOpportunities = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [page, setPage] = useState(1);
 
-  const userId = user?._id || user?.id || "";
-
   const fetchMyOpportunities = useCallback(async () => {
-    if (!userId) return;
-
     setLoading(true);
     setError("");
 
     try {
-      const data = await opportunityApi.getAll();
-      const mine = (data?.opportunities || [])
-        .filter((opportunity) => opportunity?.ngo_id?._id === userId)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setOpportunities(mine);
+      const data = await opportunityApi.getMine();
+      setOpportunities(data?.opportunities || []);
     } catch (fetchError) {
       setError(
         fetchError?.response?.data?.message || "Unable to load your opportunities.",
@@ -49,7 +41,7 @@ const NGOOpportunities = () => {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     fetchMyOpportunities();

@@ -1,9 +1,9 @@
-import Match from "../models/Match.js";
-import Notification from "../models/Notification.js";
 import Opportunity from "../models/Opportunity.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
 import { logAdminAction } from "../services/admin-log.service.js";
+import { deleteMatchesForOpportunity } from "../services/match.service.js";
+import { deleteNotificationsForOpportunity } from "../services/notification.service.js";
 import {
   getAdminLogsData,
   getAdminOpportunitiesData,
@@ -96,8 +96,8 @@ export const deleteAdminOpportunityController = async (req, res, next) => {
 
     await Promise.all([
       Opportunity.deleteOne({ _id: id }),
-      Match.deleteMany({ opportunity_id: id }),
-      Notification.deleteMany({ "metadata.opportunityId": id }),
+      deleteMatchesForOpportunity(id),
+      deleteNotificationsForOpportunity(id),
     ]);
 
     await logAdminAction({

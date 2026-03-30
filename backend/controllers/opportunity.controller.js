@@ -1,8 +1,13 @@
 import mongoose from "mongoose";
 import Opportunity from "../models/Opportunity.js";
-import User from "../models/User.js";
+import User, { buildActiveUserQuery } from "../models/User.js";
 import AppError from "../utils/AppError.js";
 import { resolveWasteSkills } from "../constants/wasteSkills.js";
+import {
+  deleteMatchesForOpportunity,
+  syncOpportunityMatches,
+} from "../services/match.service.js";
+import { deleteNotificationsForOpportunity } from "../services/notification.service.js";
 
 const VALID_STATUSES = ["open", "closed", "in-progress"];
 const UPDATE_FIELDS = [
@@ -75,6 +80,12 @@ export const createOpportunity = async (req, res, next) => {
       ngo_id: req.user.id,
     });
 
+    try {
+      await syncOpportunityMatches(opportunity._id);
+    } catch (syncError) {
+      console.error("Failed to sync matches after opportunity creation:", syncError);
+    }
+
     const createdOpportunity = await Opportunity.findById(opportunity._id).populate(
       "ngo_id",
       "name location",
@@ -86,11 +97,28 @@ export const createOpportunity = async (req, res, next) => {
   }
 };
 
+export const getMyOpportunities = async (req, res, next) => {
+  try {
+    const opportunities = await Opportunity.find({ ngo_id: req.user.id })
+      .populate("ngo_id", "name location")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      count: opportunities.length,
+      opportunities,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getAllOpportunities = async (req, res, next) => {
   try {
     const { location, skills, status } = req.query;
     const query = {};
-    const activeNgoIds = await User.find({ role: "NGO", status: "active" }).distinct("_id");
+    const activeNgoIds = await User.find(buildActiveUserQuery({ role: "NGO" })).distinct(
+      "_id",
+    );
     query.ngo_id = { $in: activeNgoIds };
 
     if (location) {
@@ -232,6 +260,11 @@ export const updateOpportunity = async (req, res, next) => {
     });
 
     await opportunity.save();
+    try {
+      await syncOpportunityMatches(opportunity._id);
+    } catch (syncError) {
+      console.error("Failed to sync matches after opportunity update:", syncError);
+    }
     await opportunity.populate("ngo_id", "name location");
 
     return res.status(200).json(opportunity);
@@ -256,7 +289,11 @@ export const deleteOpportunity = async (req, res, next) => {
       return next(new AppError("Forbidden: You can only delete your own opportunities", 403));
     }
 
-    await opportunity.deleteOne();
+    await Promise.all([
+      opportunity.deleteOne(),
+      deleteMatchesForOpportunity(opportunity._id),
+      deleteNotificationsForOpportunity(opportunity._id),
+    ]);
 
     return res.status(200).json({ message: "Opportunity deleted successfully" });
   } catch (error) {

@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import User, { getEffectiveUserStatus } from "../models/User.js";
 import sendEmail from "../utils/email.js";
 import { resolveWasteSkills } from "../constants/wasteSkills.js";
 
@@ -201,7 +201,7 @@ export const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        status: user.status,
+        status: getEffectiveUserStatus(user),
         emailVerified: user.emailVerified,
       },
     });
@@ -216,7 +216,9 @@ export const getUserProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    return res.status(200).json(user);
+    const profile = user.toObject();
+    profile.status = getEffectiveUserStatus(user);
+    return res.status(200).json(profile);
   } catch (error) {
     return res.status(500).json({ message: "Server error", error });
   }
@@ -259,7 +261,7 @@ export const updateUserProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        status: user.status,
+        status: getEffectiveUserStatus(user),
         skills: user.skills,
         location: user.location,
         bio: user.bio,

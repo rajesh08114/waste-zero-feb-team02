@@ -16,6 +16,7 @@ const statusBadgeClass = (status) => {
 
 const OpportunitiesPage = () => {
   const globalSearch = useAppStore((state) => state.globalSearch);
+  const setGlobalSearch = useAppStore((state) => state.setGlobalSearch);
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,7 +26,7 @@ const OpportunitiesPage = () => {
       setLoading(true);
       setError("");
       try {
-        const data = await opportunityApi.getAll();
+        const data = await opportunityApi.getAll({ status: "open" });
         setOpportunities(data?.opportunities || []);
       } catch (fetchError) {
         setError(
@@ -66,7 +67,7 @@ const OpportunitiesPage = () => {
           Opportunities
         </h1>
         <p className="mt-2 text-sm text-emerald-900/70 dark:text-emerald-100/70">
-          Browse active opportunities from partner NGOs.
+          Browse open opportunities from active partner NGOs.
         </p>
       </section>
 
@@ -77,9 +78,22 @@ const OpportunitiesPage = () => {
           {error}
         </p>
       ) : filteredOpportunities.length === 0 ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-900/25 dark:text-emerald-300">
-          No opportunities available right now.
-        </p>
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-900/25 dark:text-emerald-300">
+          <p>
+            {searchValue
+              ? "No open opportunities match your current search."
+              : "No open opportunities available right now."}
+          </p>
+          {searchValue ? (
+            <button
+              type="button"
+              onClick={() => setGlobalSearch("")}
+              className="mt-3 rounded-lg border border-emerald-400 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+            >
+              Clear Search
+            </button>
+          ) : null}
+        </div>
       ) : (
         <div className="grid gap-5">
           {filteredOpportunities.map((opportunity) => (

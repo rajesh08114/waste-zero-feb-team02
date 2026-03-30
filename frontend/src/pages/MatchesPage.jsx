@@ -115,22 +115,16 @@ const VolunteerMatches = () => {
 };
 
 const NgoMatches = () => {
-  const currentUser = useAppStore((state) => state.currentUser);
   const [loading, setLoading] = useState(true);
   const [matchedByOpportunity, setMatchedByOpportunity] = useState([]);
 
-  const userId = currentUser?._id || currentUser?.id;
-
   useEffect(() => {
     const loadMatches = async () => {
-      if (!userId) return;
       setLoading(true);
 
       try {
-        const opportunitiesData = await opportunityApi.getAll();
-        const opportunities = (opportunitiesData?.opportunities || []).filter(
-          (item) => item?.ngo_id?._id === userId,
-        );
+        const opportunitiesData = await opportunityApi.getMine();
+        const opportunities = opportunitiesData?.opportunities || [];
 
         const matchResults = await Promise.all(
           opportunities.map(async (opportunity) => {
@@ -159,7 +153,7 @@ const NgoMatches = () => {
     };
 
     loadMatches();
-  }, [userId]);
+  }, []);
 
   const totalMatches = useMemo(
     () =>

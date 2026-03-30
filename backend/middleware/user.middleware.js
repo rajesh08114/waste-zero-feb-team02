@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import AppError from "../utils/AppError.js";
-import User from "../models/User.js";
+import User, { getEffectiveUserStatus } from "../models/User.js";
 
 export const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -29,7 +29,7 @@ export const authenticateToken = async (req, res, next) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      status: user.status,
+      status: getEffectiveUserStatus(user),
       emailVerified: user.emailVerified,
     };
     return next();

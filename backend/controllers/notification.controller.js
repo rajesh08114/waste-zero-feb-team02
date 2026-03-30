@@ -35,7 +35,7 @@ export const markNotificationReadController = async (req, res, next) => {
     const notification = await Notification.findOneAndUpdate(
       { _id: id, user_id: req.user.id },
       { is_read: true },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!notification) {

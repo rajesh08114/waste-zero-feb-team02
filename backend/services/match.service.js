@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import Match from "../models/Match.js";
 import Opportunity from "../models/Opportunity.js";
-import User from "../models/User.js";
+import User, { buildActiveUserQuery, isUserActive } from "../models/User.js";
 import AppError from "../utils/AppError.js";
 import { createNotification } from "./notification.service.js";
 
@@ -74,6 +74,23 @@ const ensureIdsAreValid = (...ids) => {
   });
 };
 
+const deactivateMatches = async (filter) => {
+  await Match.updateMany(filter, {
+    is_active: false,
+    last_evaluated_at: new Date(),
+  });
+};
+
+export const deactivateMatchesForOpportunity = async (opportunityId) => {
+  ensureIdsAreValid(opportunityId);
+  await deactivateMatches({ opportunity_id: opportunityId, is_active: true });
+};
+
+export const deleteMatchesForOpportunity = async (opportunityId) => {
+  ensureIdsAreValid(opportunityId);
+  await Match.deleteMany({ opportunity_id: opportunityId });
+};
+
 const upsertMatchForOpportunity = async ({ volunteer, opportunity, existingMatch }) => {
   const { skillOverlap, skillScore, locationScore, score, isEligible } =
     computeMatchScore(volunteer, opportunity);
@@ -109,7 +126,11 @@ const upsertMatchForOpportunity = async ({ volunteer, opportunity, existingMatch
   const match = await Match.findOneAndUpdate(
     { volunteer_id: volunteer._id, opportunity_id: opportunity._id },
     matchPayload,
-    { upsert: true, new: true, setDefaultsOnInsert: true },
+    {
+      upsert: true,
+      returnDocument: "after",
+      setDefaultsOnInsert: true,
+    },
   );
 
   if (wasMissing || wasInactive) {
@@ -151,14 +172,40 @@ export const syncVolunteerMatches = async (volunteerId) => {
   if (volunteer.role !== "volunteer") {
     throw new AppError("Only volunteers can access this match view", 403);
   }
-  if (volunteer.status !== "active") {
+  if (!isUserActive(volunteer)) {
     throw new AppError("Volunteer account is not active", 403);
   }
 
-  const opportunities = await Opportunity.find({ status: "open" });
+  const activeNgoIds = await User.find(buildActiveUserQuery({ role: "NGO" })).distinct(
+    "_id",
+  );
+  const opportunities = await Opportunity.find({
+    status: "open",
+    ngo_id: { $in: activeNgoIds },
+  });
   const existingMatches = await Match.find({ volunteer_id: volunteer._id });
   const existingByOpportunity = new Map(
     existingMatches.map((match) => [String(match.opportunity_id), match]),
+  );
+  const openOpportunityIds = new Set(
+    opportunities.map((opportunity) => String(opportunity._id)),
+  );
+
+  await Promise.all(
+    existingMatches
+      .filter(
+        (match) =>
+          match.is_active && !openOpportunityIds.has(String(match.opportunity_id)),
+      )
+      .map((match) =>
+        Match.updateOne(
+          { _id: match._id },
+          {
+            is_active: false,
+            last_evaluated_at: new Date(),
+          },
+        ),
+      ),
   );
 
   await Promise.all(
@@ -217,7 +264,13 @@ export const syncOpportunityMatches = async (opportunityId) => {
     throw new AppError("Opportunity not found", 404);
   }
 
-  const volunteers = await User.find({ role: "volunteer", status: "active" });
+  const ngo = await User.findById(opportunity.ngo_id).select("_id role status");
+  if (!ngo || ngo.role !== "NGO" || !isUserActive(ngo) || opportunity.status !== "open") {
+    await deactivateMatchesForOpportunity(opportunityId);
+    return;
+  }
+
+  const volunteers = await User.find(buildActiveUserQuery({ role: "volunteer" }));
   const existingMatches = await Match.find({ opportunity_id: opportunity._id });
   const existingByVolunteer = new Map(
     existingMatches.map((match) => [String(match.volunteer_id), match]),
@@ -296,7 +349,7 @@ export const validateMatchedPair = async (senderId, receiverId) => {
     throw new AppError("Sender or receiver not found", 404);
   }
 
-  if (sender.status !== "active" || receiver.status !== "active") {
+  if (!isUserActive(sender) || !isUserActive(receiver)) {
     throw new AppError("Messaging is allowed only between active users", 403);
   }
 
@@ -307,15 +360,44 @@ export const validateMatchedPair = async (senderId, receiverId) => {
   const volunteerId = sender.role === "volunteer" ? sender._id : receiver._id;
   const ngoId = sender.role === "NGO" ? sender._id : receiver._id;
 
-  const activeMatch = await Match.findOne({
+  const activeMatches = await Match.find({
     volunteer_id: volunteerId,
     ngo_id: ngoId,
     is_active: true,
-  });
+  }).select("_id opportunity_id");
 
-  if (!activeMatch) {
+  if (activeMatches.length === 0) {
     throw new AppError("Messaging is allowed only between matched users", 403);
   }
 
-  return { sender, receiver, volunteerId, ngoId, activeMatch };
+  const openOpportunityIds = await Opportunity.find({
+    _id: { $in: activeMatches.map((match) => match.opportunity_id) },
+    status: "open",
+  }).distinct("_id");
+
+  const openOpportunityIdSet = new Set(
+    openOpportunityIds.map((opportunityId) => String(opportunityId)),
+  );
+
+  if (openOpportunityIdSet.size === 0) {
+    await deactivateMatches({
+      volunteer_id: volunteerId,
+      ngo_id: ngoId,
+      is_active: true,
+    });
+    throw new AppError("Messaging is allowed only between matched users", 403);
+  }
+
+  await deactivateMatches({
+    volunteer_id: volunteerId,
+    ngo_id: ngoId,
+    is_active: true,
+    opportunity_id: {
+      $nin: Array.from(openOpportunityIdSet).map(
+        (opportunityId) => new mongoose.Types.ObjectId(opportunityId),
+      ),
+    },
+  });
+
+  return { sender, receiver, volunteerId, ngoId, activeMatches };
 };

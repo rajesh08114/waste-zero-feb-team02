@@ -1,6 +1,6 @@
 import { Bell, Menu, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { userApi } from "../../api/userApi";
 import { useAppStore } from "../../store/useAppStore";
 import { getApiErrorMessage } from "../../utils/apiError";
@@ -20,6 +20,7 @@ const formatNotificationTime = (value) => {
 
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useAppStore((state) => state.currentUser);
   const logout = useAppStore((state) => state.logout);
   const loadCurrentUser = useAppStore((state) => state.loadCurrentUser);
@@ -50,6 +51,10 @@ const DashboardLayout = ({ children }) => {
       document.body.style.overflow = previousOverflow;
     };
   }, [mobileSidebarOpen]);
+
+  useEffect(() => {
+    setGlobalSearch("");
+  }, [location.pathname, setGlobalSearch]);
 
   const handleLogout = () => {
     logout();

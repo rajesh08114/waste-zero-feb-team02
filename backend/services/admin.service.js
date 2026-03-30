@@ -2,7 +2,7 @@ import AdminLog from "../models/AdminLog.js";
 import Match from "../models/Match.js";
 import Message from "../models/Message.js";
 import Opportunity from "../models/Opportunity.js";
-import User from "../models/User.js";
+import User, { buildActiveUserQuery } from "../models/User.js";
 import AppError from "../utils/AppError.js";
 
 const DEFAULT_PAGE = 1;
@@ -98,8 +98,8 @@ export const getAdminOverviewData = async () => {
     recentLogs,
   ] = await Promise.all([
     User.countDocuments(),
-    User.countDocuments({ role: "NGO", status: "active" }),
-    User.countDocuments({ role: "volunteer", status: "active" }),
+    User.countDocuments(buildActiveUserQuery({ role: "NGO" })),
+    User.countDocuments(buildActiveUserQuery({ role: "volunteer" })),
     Opportunity.countDocuments(),
     User.find().sort({ createdAt: -1 }).limit(5).select("name role createdAt"),
     Opportunity.find()
@@ -280,7 +280,7 @@ export const getAdminReportData = async ({ start, end }) => {
 
   const [activeVolunteerCount, matchedVolunteerIds, conversationIds, totalMessages] =
     await Promise.all([
-      User.countDocuments({ role: "volunteer", status: "active" }),
+      User.countDocuments(buildActiveUserQuery({ role: "volunteer" })),
       Match.distinct("volunteer_id", {
         createdAt: { $gte: start, $lte: end },
       }),

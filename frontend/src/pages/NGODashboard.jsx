@@ -22,19 +22,12 @@ const NGODashboard = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const userId = user?._id || user?.id || "";
-
   useEffect(() => {
     const fetchMyOpportunities = async () => {
-      if (!userId) return;
-
       setLoading(true);
       try {
-        const data = await opportunityApi.getAll();
-        const mine = (data?.opportunities || [])
-          .filter((opportunity) => opportunity?.ngo_id?._id === userId)
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setMyOpportunities(mine);
+        const data = await opportunityApi.getMine();
+        setMyOpportunities(data?.opportunities || []);
       } catch (error) {
         toast.error(
           error?.response?.data?.message || "Unable to load opportunities.",
@@ -45,7 +38,7 @@ const NGODashboard = () => {
     };
 
     fetchMyOpportunities();
-  }, [userId]);
+  }, []);
 
   const previewOpportunities = useMemo(
     () => myOpportunities.slice(0, 3),
