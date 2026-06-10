@@ -10,11 +10,4 @@ export const authApi = {
     const response = await apiClient.post("/login", payload);
     return response.data;
   },
-
-  async verifyEmail(token) {
-    const response = await apiClient.get("/verify-email", {
-      params: { token },
-    });
-    return response.data;
-  },
 };

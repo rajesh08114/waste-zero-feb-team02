@@ -21,6 +21,8 @@ const LoginPage = () => {
   });
 
   const redirectPath = useMemo(() => getDashboardRoute(currentUser), [currentUser]);
+  const infoMessage =
+    typeof location.state?.message === "string" ? location.state.message : "";
 
   if (isAuthenticated) return <Navigate to={redirectPath} replace />;
 
@@ -58,6 +60,12 @@ const LoginPage = () => {
         <p className="text-gray-500 mb-6 dark:text-gray-300">
           Sign in to your WasteZero account
         </p>
+
+        {infoMessage && (
+          <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+            {infoMessage}
+          </p>
+        )}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <input

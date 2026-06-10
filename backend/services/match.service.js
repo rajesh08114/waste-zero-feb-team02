@@ -180,14 +180,14 @@ export const syncVolunteerMatches = async (volunteerId) => {
     "_id",
   );
   const opportunities = await Opportunity.find({
-    status: "open",
+    status: { $in: ["open", "in-progress"] },
     ngo_id: { $in: activeNgoIds },
   });
   const existingMatches = await Match.find({ volunteer_id: volunteer._id });
   const existingByOpportunity = new Map(
     existingMatches.map((match) => [String(match.opportunity_id), match]),
   );
-  const openOpportunityIds = new Set(
+  const activeOpportunityIds = new Set(
     opportunities.map((opportunity) => String(opportunity._id)),
   );
 
@@ -195,7 +195,7 @@ export const syncVolunteerMatches = async (volunteerId) => {
     existingMatches
       .filter(
         (match) =>
-          match.is_active && !openOpportunityIds.has(String(match.opportunity_id)),
+          match.is_active && !activeOpportunityIds.has(String(match.opportunity_id)),
       )
       .map((match) =>
         Match.updateOne(
@@ -265,7 +265,7 @@ export const syncOpportunityMatches = async (opportunityId) => {
   }
 
   const ngo = await User.findById(opportunity.ngo_id).select("_id role status");
-  if (!ngo || ngo.role !== "NGO" || !isUserActive(ngo) || opportunity.status !== "open") {
+  if (!ngo || ngo.role !== "NGO" || !isUserActive(ngo) || !["open", "in-progress"].includes(opportunity.status)) {
     await deactivateMatchesForOpportunity(opportunityId);
     return;
   }
@@ -274,6 +274,24 @@ export const syncOpportunityMatches = async (opportunityId) => {
   const existingMatches = await Match.find({ opportunity_id: opportunity._id });
   const existingByVolunteer = new Map(
     existingMatches.map((match) => [String(match.volunteer_id), match]),
+  );
+  const activeVolunteerIds = new Set(volunteers.map((v) => String(v._id)));
+
+  await Promise.all(
+    existingMatches
+      .filter(
+        (match) =>
+          match.is_active && !activeVolunteerIds.has(String(match.volunteer_id)),
+      )
+      .map((match) =>
+        Match.updateOne(
+          { _id: match._id },
+          {
+            is_active: false,
+            last_evaluated_at: new Date(),
+          },
+        ),
+      ),
   );
 
   await Promise.all(
@@ -370,16 +388,16 @@ export const validateMatchedPair = async (senderId, receiverId) => {
     throw new AppError("Messaging is allowed only between matched users", 403);
   }
 
-  const openOpportunityIds = await Opportunity.find({
+  const activeOpportunityIds = await Opportunity.find({
     _id: { $in: activeMatches.map((match) => match.opportunity_id) },
-    status: "open",
+    status: { $in: ["open", "in-progress"] },
   }).distinct("_id");
 
-  const openOpportunityIdSet = new Set(
-    openOpportunityIds.map((opportunityId) => String(opportunityId)),
+  const activeOpportunityIdSet = new Set(
+    activeOpportunityIds.map((opportunityId) => String(opportunityId)),
   );
 
-  if (openOpportunityIdSet.size === 0) {
+  if (activeOpportunityIdSet.size === 0) {
     await deactivateMatches({
       volunteer_id: volunteerId,
       ngo_id: ngoId,
@@ -393,7 +411,7 @@ export const validateMatchedPair = async (senderId, receiverId) => {
     ngo_id: ngoId,
     is_active: true,
     opportunity_id: {
-      $nin: Array.from(openOpportunityIdSet).map(
+      $nin: Array.from(activeOpportunityIdSet).map(
         (opportunityId) => new mongoose.Types.ObjectId(opportunityId),
       ),
     },

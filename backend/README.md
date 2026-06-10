@@ -32,10 +32,6 @@ ACCESS_TOKEN_EXPIRY=15m
 REFRESH_TOKEN_EXPIRY=7d
 PORT=3000
 FRONTEND_URL=http://localhost:5173
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@example.com
-EMAIL_PASS=your_email_app_password
 ```
 
 ## Roles and Status
@@ -43,6 +39,7 @@ EMAIL_PASS=your_email_app_password
 - User status: `active`, `suspended`
 - Suspended users cannot login, refresh tokens, call protected APIs, or open sockets
 - Public signup is limited to `volunteer` and `NGO`
+- Users can log in immediately after signup; there is no email verification step
 
 ## Core API Base
 `http://localhost:3000/api/v1`
@@ -53,11 +50,9 @@ EMAIL_PASS=your_email_app_password
 - `POST /register`
 - `POST /login`
 - `POST /refresh-token`
-- `GET /verify-email`
 - `GET /me`
 - `PUT /me`
 - `PUT /me/password`
-- `POST /me/verify-email`
 
 ### Opportunities
 - `POST /opportunities`

@@ -23,8 +23,6 @@ const userSchema = new mongoose.Schema({
   skills: [{ type: String, enum: WASTE_SKILL_OPTIONS }],
   location: { type: String, trim: true },
   bio: { type: String, trim: true },
-  emailVerified: { type: Boolean, default: false },
-  verificationToken: String,
   createdAt: { type: Date, default: Date.now, index: true },
   updatedAt: { type: Date, default: Date.now },
 });

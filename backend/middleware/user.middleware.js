@@ -12,9 +12,7 @@ export const authenticateToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select(
-      "_id name email role status emailVerified",
-    );
+    const user = await User.findById(decoded.id).select("_id name email role status");
 
     if (!user) {
       return next(new AppError("User not found", 401));
@@ -30,7 +28,6 @@ export const authenticateToken = async (req, res, next) => {
       email: user.email,
       role: user.role,
       status: getEffectiveUserStatus(user),
-      emailVerified: user.emailVerified,
     };
     return next();
   } catch {

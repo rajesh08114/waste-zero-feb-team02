@@ -35,6 +35,11 @@ VITE_ENABLE_DEBUG_LOGS=false
 
 ## Route Coverage
 
+### Public
+- `/`
+- `/login`
+- `/signup`
+
 ### Shared
 - `/profile`
 - `/opportunities`
@@ -73,6 +78,11 @@ VITE_ENABLE_DEBUG_LOGS=false
 - Global notification panel in the dashboard header
 - Match and message toasts via socket bridge
 - Chat UI with realtime delivery and REST fallback
+
+## Auth Flow
+- Public signup is available for `volunteer` and `NGO`
+- Successful signup redirects users to `/login`
+- Email verification is not required
 
 ## Validation
 - `npm run lint`

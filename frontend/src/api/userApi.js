@@ -15,9 +15,4 @@ export const userApi = {
     const response = await apiClient.put("/me/password", payload);
     return response.data;
   },
-
-  async requestEmailVerification() {
-    const response = await apiClient.post("/me/verify-email");
-    return response.data;
-  },
 };

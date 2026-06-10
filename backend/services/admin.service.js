@@ -180,7 +180,7 @@ export const getAdminUsersData = async (query) => {
 
   const [users, total] = await Promise.all([
     User.find(filters)
-      .select("-password -verificationToken")
+      .select("-password")
       .sort({ createdAt: -1 })
       .skip((page - 1) * pageSize)
       .limit(pageSize),
