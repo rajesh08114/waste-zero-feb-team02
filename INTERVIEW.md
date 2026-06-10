@@ -115,3 +115,8 @@ Because messaging requires an active match with status `"open"` or `"in-progress
 
 ### Q10: How does the platform enforce Route-Based Access Control (RBAC) for NGO and Admin endpoints?
 **Answer:** RBAC is handled via Express middlewares. First, `authenticateToken` validates the request header JWT token, verifies that the user is not suspended, and injects `req.user` with their database record. Then, `authorizeRoles("admin")` or `authorizeRoles("NGO")` checks if `req.user.role` matches the required permission scope. If the role doesn't match, it stops execution and responds with a `403 Forbidden` JSON payload.
+
+---
+
+### Q11: How do we deploy this React + Express monorepo on Vercel, and how are Socket.io limitations handled in serverless runtimes?
+**Answer:** We configure a root-level [vercel.json](file:///c:/Users/chall/OneDrive/Desktop/waste_zero/waste-zero-feb-team02/vercel.json) defining two builds: `@vercel/node` for `backend/server.js` and `@vercel/static-build` for the `frontend` package. Rewrites map all `/api/v1/*` requests to the serverless function. Sockets (WebSockets) require persistent connections, which Vercel Serverless Functions do not support. To keep local/persistent deploys working alongside serverless, we export the Express `app` and only call `listen()` locally if `process.env.VERCEL` is not set. We also implemented a database connection middleware in the backend to lazy-load the MongoDB connection dynamically per serverless request.
