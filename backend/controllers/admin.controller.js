@@ -1,8 +1,9 @@
 import Opportunity from "../models/Opportunity.js";
 import User from "../models/User.js";
+import Match from "../models/Match.js";
 import AppError from "../utils/AppError.js";
 import { logAdminAction } from "../services/admin-log.service.js";
-import { deleteMatchesForOpportunity } from "../services/match.service.js";
+import { deleteMatchesForOpportunity, syncVolunteerMatches, syncOpportunityMatches } from "../services/match.service.js";
 import { deleteNotificationsForOpportunity } from "../services/notification.service.js";
 import {
   getAdminLogsData,
@@ -48,14 +49,36 @@ export const updateAdminUserStatusController = async (req, res, next) => {
       throw new AppError("You cannot suspend your own admin account", 400);
     }
 
-    const user = await User.findById(id).select("-password -verificationToken");
+    const user = await User.findById(id).select("-password");
     if (!user) {
       throw new AppError("User not found", 404);
     }
 
+    const previousStatus = user.status;
     user.status = status;
     user.updatedAt = Date.now();
     await user.save();
+
+    if (status === "suspended") {
+      if (user.role === "volunteer") {
+        await Match.updateMany({ volunteer_id: user._id }, { is_active: false, last_evaluated_at: new Date() });
+      } else if (user.role === "NGO") {
+        await Match.updateMany({ ngo_id: user._id }, { is_active: false, last_evaluated_at: new Date() });
+      }
+    } else if (status === "active" && previousStatus === "suspended") {
+      try {
+        if (user.role === "volunteer") {
+          await syncVolunteerMatches(user._id);
+        } else if (user.role === "NGO") {
+          const ngoActiveOpportunities = await Opportunity.find({ ngo_id: user._id, status: { $in: ["open", "in-progress"] } });
+          await Promise.all(
+            ngoActiveOpportunities.map((opportunity) => syncOpportunityMatches(opportunity._id))
+          );
+        }
+      } catch (syncError) {
+        console.error("Match synchronization failed after user reactivation:", syncError);
+      }
+    }
 
     await logAdminAction({
       action: `user_${status}`,

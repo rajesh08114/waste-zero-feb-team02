@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, Mail, MapPin, ShieldAlert } from "lucide-react";
+import { ClipboardList, Mail, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { opportunityApi } from "../api/opportunityApi";
 import { matchApi } from "../api/matchApi";
@@ -109,15 +109,6 @@ const VolunteerDashboard = () => {
           >
             Edit My Profile
           </Link>
-
-          {!user?.emailVerified && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-              <p className="flex items-start gap-2">
-                <ShieldAlert size={14} className="mt-0.5" />
-                Please verify your email to unlock all volunteer features.
-              </p>
-            </div>
-          )}
         </section>
 
         <div className="space-y-6 xl:col-span-2">

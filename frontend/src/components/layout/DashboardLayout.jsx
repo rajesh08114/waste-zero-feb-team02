@@ -1,9 +1,7 @@
 import { Bell, Menu, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { userApi } from "../../api/userApi";
 import { useAppStore } from "../../store/useAppStore";
-import { getApiErrorMessage } from "../../utils/apiError";
 import { getDashboardRoute } from "../../utils/dashboardRoute";
 import DashboardSidebar from "./DashboardSidebar";
 
@@ -23,7 +21,6 @@ const DashboardLayout = ({ children }) => {
   const location = useLocation();
   const user = useAppStore((state) => state.currentUser);
   const logout = useAppStore((state) => state.logout);
-  const loadCurrentUser = useAppStore((state) => state.loadCurrentUser);
   const globalSearch = useAppStore((state) => state.globalSearch);
   const setGlobalSearch = useAppStore((state) => state.setGlobalSearch);
   const notifications = useAppStore((state) => state.notifications);
@@ -34,13 +31,10 @@ const DashboardLayout = ({ children }) => {
     (state) => state.markAllNotificationsRead,
   );
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [verificationLoading, setVerificationLoading] = useState(false);
-  const [verificationNotice, setVerificationNotice] = useState("");
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
 
   const dashboardPath = getDashboardRoute(user);
-  const needsEmailVerification = Boolean(user && !user.emailVerified);
 
   useEffect(() => {
     if (!mobileSidebarOpen) return undefined;
@@ -64,37 +58,6 @@ const DashboardLayout = ({ children }) => {
 
   const handleSidebarSelection = () => {
     setMobileSidebarOpen(false);
-  };
-
-  const handleStartEmailVerification = async () => {
-    setVerificationNotice("");
-    setVerificationLoading(true);
-
-    try {
-      const data = await userApi.requestEmailVerification();
-      const verificationLink = data?.verificationLink;
-
-      if (verificationLink) {
-        window.location.assign(verificationLink);
-        return;
-      }
-
-      setVerificationNotice(
-        data?.message ??
-          "Verification started. Please check your email for the link.",
-      );
-    } catch (error) {
-      setVerificationNotice(
-        getApiErrorMessage(error, "Unable to start email verification."),
-      );
-    } finally {
-      setVerificationLoading(false);
-    }
-  };
-
-  const handleRefreshVerificationStatus = async () => {
-    setVerificationNotice("");
-    await loadCurrentUser();
   };
 
   const handleToggleNotifications = async () => {
@@ -243,41 +206,6 @@ const DashboardLayout = ({ children }) => {
                       </button>
                     ))}
                   </div>
-                )}
-              </div>
-            )}
-
-            {needsEmailVerification && (
-              <div className="border-t border-amber-300/70 bg-amber-50 px-4 py-3 sm:px-6 lg:px-8 dark:border-amber-700/60 dark:bg-amber-900/20">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                    Your email is not verified. Click verify to start email
-                    verification.
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleRefreshVerificationStatus}
-                      className="rounded-full border border-amber-400 px-4 py-1.5 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-900/40"
-                    >
-                      Refresh Status
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleStartEmailVerification}
-                      disabled={verificationLoading}
-                      className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      {verificationLoading ? "Starting..." : "Verify Email"}
-                    </button>
-                  </div>
-                </div>
-
-                {verificationNotice && (
-                  <p className="mt-2 text-xs text-amber-800 dark:text-amber-300">
-                    {verificationNotice}
-                  </p>
                 )}
               </div>
             )}

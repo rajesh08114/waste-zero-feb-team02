@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAppStore } from "../store/useAppStore";
 import AuthLayout from "./Auth/AuthLayout";
 import { getDashboardRoute } from "../utils/dashboardRoute";
@@ -17,6 +17,7 @@ const initialFormState = {
 };
 
 const SignupPage = () => {
+  const navigate = useNavigate();
   const signup = useAppStore((state) => state.signup);
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
   const authLoading = useAppStore((state) => state.authLoading);
@@ -44,6 +45,11 @@ const SignupPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (formState.password.length < 6) {
+      setLocalError("Password must be at least 6 characters long");
+      return;
+    }
+
     if (formState.password !== formState.confirmPassword) {
       setLocalError("Passwords do not match");
       return;
@@ -59,7 +65,15 @@ const SignupPage = () => {
       skills: formState.skills,
     };
 
-    await signup(payload);
+    const result = await signup(payload);
+    if (!result.success) return;
+
+    navigate("/login", {
+      replace: true,
+      state: {
+        message: "Account created successfully. Please sign in to continue.",
+      },
+    });
   };
 
   return (

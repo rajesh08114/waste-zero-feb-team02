@@ -7,7 +7,6 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
-import VerifyEmail from "./pages/VerifyEmail";
 import VolunteerDashboard from "./pages/VolunteerDashboard";
 import NGODashboard from "./pages/NGODashboard";
 import ProfilePage from "./pages/ProfilePage";
@@ -62,7 +61,6 @@ function App() {
       <RealtimeBridge />
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
 
         <Route
           path="/login"

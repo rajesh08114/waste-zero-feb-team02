@@ -13,6 +13,7 @@ Waste Zero is a full-stack platform for volunteers, NGOs, and admins. It now cov
 - `admin`
 
 Public signup only creates `volunteer` and `NGO` accounts. Admin accounts should be created directly in the database or through a controlled internal workflow.
+New accounts can sign in immediately after signup. Email verification is not part of the current auth flow.
 
 ## Admin Routes
 - `/admin`

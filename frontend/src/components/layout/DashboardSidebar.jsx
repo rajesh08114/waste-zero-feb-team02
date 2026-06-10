@@ -36,7 +36,7 @@ const createPrimaryItems = (dashboardPath, role) => {
       },
       {
         label: "Matches",
-        icon: MessageCircle,
+        icon: CalendarDays,
         to: "/matches",
       },
       {

@@ -286,10 +286,12 @@ const AdminUsersPage = () => {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700/70 dark:text-emerald-300/70">
-                  Email verified
+                  Created
                 </p>
                 <p className="mt-1 text-sm text-emerald-900 dark:text-emerald-100">
-                  {selectedUser.emailVerified ? "Yes" : "No"}
+                  {selectedUser.createdAt
+                    ? new Date(selectedUser.createdAt).toLocaleDateString()
+                    : "Unknown"}
                 </p>
               </div>
             </div>
