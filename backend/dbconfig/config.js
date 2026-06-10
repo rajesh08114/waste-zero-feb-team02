@@ -1,6 +1,12 @@
-﻿import mongoose from "mongoose";
+import mongoose from "mongoose";
+
+let isConnected = false;
 
 export const connectDB = async () => {
+  if (isConnected) {
+    return;
+  }
+
   const mongoUri = process.env.MONGO_URI;
 
   if (!mongoUri) {
@@ -10,6 +16,7 @@ export const connectDB = async () => {
 
   try {
     const conn = await mongoose.connect(mongoUri);
+    isConnected = true;
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error("Database connection failed:", error.message);

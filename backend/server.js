@@ -40,6 +40,15 @@ app.use(
 
 app.use(express.json());
 
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("Hello World from Express server!");
 });
@@ -85,7 +94,11 @@ const startServer = async () => {
   });
 };
 
-startServer().catch((error) => {
-  console.error("Server startup failed:", error);
-  process.exit(1);
-});
+if (!process.env.VERCEL) {
+  startServer().catch((error) => {
+    console.error("Server startup failed:", error);
+    process.exit(1);
+  });
+}
+
+export default app;
